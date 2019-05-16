@@ -1,0 +1,24 @@
+<aura:component>
+    <aura:attribute name="buyerSocialSecurityNumber" type="String" access="private" />
+    <aura:attribute name="coBuyerSocialSecurityNumber" type="String" access="private" />
+
+    <aura:attribute name="stepNumber" type="Integer" default="0" access="private" />
+
+    <aura:attribute name="salesPortalAccessToken" type="String" />
+    <aura:attribute name="opportunity" type="Opportunity" required="true" />
+
+
+    <aura:attribute name="isErrorOccured" type="Boolean" access="private" />
+
+    <aura:handler name="init" value="{!this}" action="{!c.init}" />
+
+    <aura:registerEvent name="hideSpinner" type="c:hideSpinner" />
+
+    <lightning:layout horizontalAlign="center" multipleRows="true">
+        <lightning:icon iconName="standard:unmatched" variant="error" size="large" alternativeText="No Credit Application"/>
+
+        <legend class="slds-form-element__label slds-m-top--medium">
+           This opportunity has no active Credit Application. Try to create Lead to start working.
+        </legend>
+    </lightning:layout>
+</aura:component>

@@ -1,0 +1,1284 @@
+<aura:component  implements="force:appHostable,flexipage:availableForAllPageTypes">
+
+    <aura:attribute name="creditApplicationId" type="String" access="public" />
+    <aura:attribute name="creditApplication" type="dealer__Credit_Application__c" access="public" />
+    <aura:attribute name="buyer" type="Account" />
+    <aura:attribute name="cobuyer" type="Account" />
+    <aura:attribute name="coBuyerSocialSecurityNumber" type="String" access="private"/>
+
+    <aura:attribute name="picklists" type="Map" access="public" />
+    <aura:attribute name="inputNameToValid" type="Map" />
+    <aura:attribute name="searchResult" type="CreditAppEditComponentController.SearchResult" />
+    <aura:attribute name="failedComponents" type="List" />
+
+    <aura:attribute name="addCobuyerModal" type="Boolean" default="false" />
+    <aura:attribute name="deleteCoBuyerModal" type="Boolean" default="false"/>
+    <aura:attribute name="finishEditModal" type="Boolean" default="false" />
+    <aura:attribute name="saveButtonClickedMode" type="Boolean" default="false" />
+    <aura:attribute name="isFormValid" type="Boolean" default="false" />
+
+    <aura:attribute name="previousBuyerAddressDisabled" type="Boolean" default="false"/>
+    <aura:attribute name="previousCoBuyerAddressDisabled" type="Boolean" default="fasle"/>
+    <aura:attribute name="previousBuyerEmployerDisabled" type="Boolean" default="false"/>
+    <aura:attribute name="previousCoBuyerEmployerDisabled" type="Boolean" default="false"/>
+    <aura:attribute name="buyerMilitaryDisabled" type="Boolean" default="true"/>
+    <aura:attribute name="coBuyerMilitaryDisabled" type="Boolean" default="true"/>
+
+    <aura:handler name="init" value="{!this}" action="{!c.init}"/>
+    <aura:handler name="validate" event="c:validated" action="{!c.handleCustomerChange}" />
+
+    <style>
+        .scrollable {
+            height: 46rem;
+            overflow-y:auto;
+        }
+    </style>
+
+    <lightning:layout multipleRows="true" class="slds-card slds-is-relative slds-m-bottom--medium">
+        <lightning:layoutItem size="12">
+            <div class="slds-page-header">
+                <div class="slds-grid">
+                    <div class="slds-col slds-has-flexi-truncate">
+                        <div class="slds-media slds-no-space slds-grow">
+                            <lightning:layout multipleRows="true" class="slds-media__body">
+                                <lightning:layoutItem size="12">
+                                    <ol class="slds-breadcrumb slds-line-height_reset">
+                                        <li class="slds-breadcrumb__item">
+                                            <span><h1>Credit Application</h1></span>
+                                        </li>
+                                    </ol>
+                                </lightning:layoutItem>
+                                <h1 class="slds-page-header__title slds-p-right_x-small">
+                                    <span class="slds-grid slds-has-flexi-truncate slds-grid_vertical-align-center">
+                                        <span class="slds-truncate" title="Recently Viewed">Edit</span>
+                                    </span>
+                                </h1>
+                                <aura:if aura:id="error-message-item" isTrue="false">
+                                    <c:popover iconName="utility:info" popoverClass="slds-nubbin_right bottom-help-popover-position slds-text-align_left">
+                                        <aura:set attribute="popoverContent">
+                                            <header class="slds-popover__header">
+                                                <h2 class="slds-text-heading_small">
+                                                    <b>Help: </b>  Status
+                                                </h2>
+                                            </header>
+                                            <div class="slds-popover__body">
+                                                <p>
+                                                    Print the credit letter for the customer(s).
+                                                    <br/>
+                                                    If you select Print button under Buyer section, only the buyer’s letter will print.
+                                                    <br/>
+                                                    If you select Print button under Joint section, both buyer and co-buyer letters will print.
+                                                </p>
+                                            </div>
+                                        </aura:set>
+                                    </c:popover>
+                                </aura:if>
+                            </lightning:layout>
+                        </div>
+                    </div>
+                    <div class="slds-col slds-no-flex slds-grid slds-align-top slds-p-bottom_xx-small">
+                        <div class="slds-button-group" role="group">
+                            <lightning:layout multipleRows="true" class="slds-button_last">
+                                <lightning:layoutItem size="12">
+                                    <div class="slds-button-group" role="group">
+                                        <lightning:button aura:id="save-creditapp-button" variant="neutral" label="Save" iconName="utility:check" onclick="{!c.tryToSaveCreditApplication}" />
+
+                                        <aura:if isTrue="{!empty(v.cobuyer)}">
+                                            <lightning:button variant="neutral" label="Add CoBuyer" iconName="utility:adduser" onclick="{!c.enableCoBuyerCreateModal}"/>
+                                            <aura:set attribute="else">
+                                                <lightning:button variant="neutral" label="Delete CoBuyer" iconName="utility:resource_absence" onclick="{!c.enableDeleteCoBuyerModal}"/>
+                                            </aura:set>
+                                        </aura:if>
+                                        <lightning:button variant="neutral" label="Back to Sales Up" iconName="utility:back" onclick="{!c.backToSalesUp}"/>
+                                    </div>
+                                </lightning:layoutItem>
+                            </lightning:layout>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </lightning:layoutItem>
+
+        <lightning:layoutItem size="2">
+            <lightning:verticalNavigation onselect="{!c.navigateToFormSection}">
+                <lightning:verticalNavigationSection label="Navigation">
+                    <lightning:verticalNavigationItemIcon aura:id="personal-information-err"
+                            label="Personal Information"
+                            name="personal-information"
+                            iconName="utility:user"
+                    />
+
+                    <lightning:verticalNavigationItemIcon aura:id="current-housing-information-err"
+                            label="Current Housing Information"
+                            name="current-housing-information"
+                            iconName="utility:home"
+                    />
+
+                    <lightning:verticalNavigationItemIcon aura:id="previous-housing-information-err"
+                            label="Previous Housing Information"
+                            name="previous-housing-information"
+                            iconName="utility:home"
+                    />
+
+                    <lightning:verticalNavigationItemIcon aura:id="employment-information-err"
+                            label="Employment Information"
+                            name="employment-information"
+                            iconName="utility:company"
+                    />
+
+                    <lightning:verticalNavigationItemIcon aura:id="credit-history-err"
+                            label="Credit History"
+                            name="credit-history"
+                            iconName="utility:moneybag"
+                    />
+
+                    <lightning:verticalNavigationItemIcon aura:id="military-expirience-err"
+                            label="Military Expirience"
+                            name="military-expirience"
+                            iconName="utility:identity"
+                    />
+
+                    <lightning:verticalNavigationItemIcon aura:id="repeat-customer-err"
+                            label="Repeat Customer"
+                            name="repeat-customer"
+                            iconName="utility:info"
+                    />
+
+                    <lightning:verticalNavigationItemIcon label="Optional Message"
+                            name="optional-message"
+                            iconName="utility:info"
+                    />
+                </lightning:verticalNavigationSection>
+            </lightning:verticalNavigation>
+
+        </lightning:layoutItem>
+
+        <lightning:layoutItem size="10" class="slds-border--left slds-scrollable--y">
+            <div class="scrollable">
+                <div aura:id="personal-information" class="slds-page-header">
+                    <div class="slds-media slds-media--center">
+                        <div class="slds-media__figure">
+                            <lightning:icon iconName="standard:contact" class="slds-icon slds-icon-standard-contact"/>
+                        </div>
+                        <div class="slds-media__body">
+                            <p class="slds-page-header__title slds-truncate">Personal Information</p>
+                        </div>
+                    </div>
+                </div>
+
+                <lightning:layout horizontalAlign="center" multipleRows="true" class="slds-has-top-magnet">
+                    <lightning:layoutItem size="6" padding="horizontal-large" >
+                        <c:customerCard aura:id="customer-card" customer="{!v.buyer}" picklists="{!v.picklists}"/>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="6" padding="horizontal-large" >
+                        <c:customerCard aura:id="customer-card" customer="{!v.cobuyer}" isReadOnly="{!if(empty(v.cobuyer), true, false)}" picklists="{!v.picklists}"/>
+                    </lightning:layoutItem>
+                </lightning:layout>
+
+                <div aura:id="current-housing-information"
+                     class="slds-page-header slds-has-bottom-magnet slds-m-top--large">
+                    <div class="slds-media slds-media--center">
+                        <div class="slds-media__figure">
+                            <lightning:icon iconName="standard:household" class="slds-icon slds-icon-custom-custom79"/>
+                        </div>
+                        <div class="slds-media__body">
+                            <p class="slds-page-header__title slds-truncate">Current Housing Information</p>
+                        </div>
+                    </div>
+                </div>
+
+                <lightning:layout horizontalAlign="center" multipleRows="true" class="slds-has-top-magnet">
+                    <lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top&#45;&#45;large">
+                        <div aura:id="buyer-info">
+                            <lightning:select name="housingType"
+                                              label="Housing Type"
+                                              required="true"
+                                              value="{!v.creditApplication.Housing_Type__c}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Housing_Type__c}" var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:input name="currentHouseNumber"
+                                             aura:id="test123"
+                                             label="Current House Number"
+                                             class="slds-m-top--small"
+                                             required="true"
+                                             value="{!v.creditApplication.Current_House_Number__c}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:input name="currentStreet"
+                                             label="Current Street"
+                                             class="slds-m-top--small"
+                                             required="true"
+                                             value="{!v.creditApplication.Current_Street__c}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:select name="currentStreetType"
+                                              label="Current Street Type"
+                                              required="true"
+                                              value="{!v.creditApplication.Current_Street_Type__c}"
+                                              class="slds-m-top--small"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Current_Street_Type__c}" var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:input name="currentHomeAddress2"
+                                             label="Current Home Address 2"
+                                             class="slds-m-top--small"
+                                             required="true"
+                                             value="{!v.creditApplication.Home_Address_2__c}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:input name="currentAddressCity"
+                                              label="Current Address City"
+                                              class="slds-m-top--small"
+                                              required="true"
+                                              value="{!v.creditApplication.dealer__Current_Address_City__c}"
+                                              onblur="{!c.fixInputField}"/>
+
+                            <lightning:select name="currentAddressState"
+                                              label="Current Address State"
+                                              required="true"
+                                              value="{!v.creditApplication.Current_Address_State__c}"
+                                              class="slds-m-top--small"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Current_Address_State__c}" var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:input name="currentAddressZip"
+                                             label="Current Address Zip"
+                                             required="true"
+                                             value="{!v.creditApplication.dealer__Current_Address_Zip__c}"
+                                             class="slds-m-top--small"
+                                             pattern="^$|^[0-9]{5}$|^[0-9]{5}-[0-9]{4}$"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:select name="currentAddressYears"
+                                              label="Current Address Duration (Years)"
+                                              required="true"
+                                              value="{!v.creditApplication.Current_Address_Duration_Years__c}"
+                                              class="slds-m-top--small"
+                                              onchange="{!c.handlePreviousAddressEnabling}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Current_Address_Duration_Years__c}"
+                                                var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:select name="currentAddressDurationMonths"
+                                              label="Current Address Duration (Months)"
+                                              required="true"
+                                              value="{!v.creditApplication.Current_Address_Duration_Months__c}"
+                                              class="slds-m-top--small"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Current_Address_Duration_Months__c}"
+                                                var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:input name="homePayment"
+                                             label="Home Payment"
+                                             class="slds-m-top--small"
+                                             required="true"
+                                             value="{!v.creditApplication.dealer__Home_Payment__c}"
+                                             onblur="{!c.fixInputField}"/>
+                        </div>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top&#45;&#45;large">
+                        <div aura:id="cobuyer-info">
+                            <lightning:select name="coBuyerHousingType"
+                                              label="Co-buyer First Housing Type"
+                                              required="true"
+                                              value="{!v.creditApplication.Co_App_Housing_Type__c}"
+                                              disabled="{!empty(v.cobuyer)}"
+                            >
+                                <aura:iteration items="{!v.picklists.Housing_Type__c}" var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:input name="coBuyerCurrentHouseNumber"
+                                             label="Co-buyer Current House Number"
+                                             required="true"
+                                             value="{!v.creditApplication.Co_App_Current_House_Number__c}"
+                                             class="slds-m-top--small"
+                                             disabled="{!empty(v.cobuyer)}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:input name="coBuyerCurrentStreet"
+                                             label="Co-buyer Current Street"
+                                             class="slds-m-top--small"
+                                             required="true"
+                                             value="{!v.creditApplication.Co_App_Current_Street__c}"
+                                             disabled="{!empty(v.cobuyer)}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:select name="coBuyerCurrentStreetType"
+                                              label="Co-buyer Current Street Type"
+                                              required="true"
+                                              value="{!v.creditApplication.Co_App_Current_Street_Type__c}"
+                                              class="slds-m-top--small"
+                                              disabled="{!empty(v.cobuyer)}"
+                                              onblur="{!c.fixInputField}"
+                                              
+                            >
+                                <aura:iteration items="{!v.picklists.Current_Street_Type__c}" var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:input name="coBuyerCurrentHomeAddress2"
+                                             label="Co-buyer Current Home Address 2"
+                                             class="slds-m-top--small"
+                                             required="true"
+                                             value="{!v.creditApplication.Co_App_Home_Address_2__c}"
+                                             disabled="{!empty(v.cobuyer)}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:input name="coBuyerCurrentAddressCity"
+                                             label="Co-buyer Current Address City"
+                                             class="slds-m-top--small"
+                                             required="true"
+                                             value="{!v.creditApplication.dealer__Co_App_Current_Address_City__c}"
+                                             disabled="{!empty(v.cobuyer)}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:select name="coBuyerCurrentAddressState"
+                                              label="Co-buyer Current Address State"
+                                              required="true"
+                                              value="{!v.creditApplication.Co_App_Current_Address_State__c}"
+                                              class="slds-m-top--small"
+                                              disabled="{!empty(v.cobuyer)}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Current_Address_State__c}" var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:input name="coBuyerCurrentAddressZip"
+                                             label="Co-buyer Current Address Zip"
+                                             required="true"
+                                             value="{!v.creditApplication.dealer__Co_App_Current_Address_Zip__c}"
+                                             class="slds-m-top--small"
+                                             pattern="^$|^[0-9]{5}$|^[0-9]{5}-[0-9]{4}$"
+                                             disabled="{!empty(v.cobuyer)}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:select name="coBuyerCurrentAddressDurationYears"
+                                              label="Co-buyer Current Address Duration (Years)"
+                                              required="true"
+                                              value="{!v.creditApplication.Co_App_Current_Address_Duration_Years__c}"
+                                              class="slds-m-top--small"
+                                              onchange="{!c.handlePreviousAddressEnabling}"
+                                              disabled="{!empty(v.cobuyer)}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Current_Address_Duration_Years__c}" var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:select name="coBuyerCurrentAddressDurationMonths"
+                                              label="Co-buyer Current Address Duration (Months)"
+                                              required="true"
+                                              value="{!v.creditApplication.Co_App_Address_Duration_Months__c}"
+                                              class="slds-m-top--small"
+                                              disabled="{!empty(v.cobuyer)}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Current_Address_Duration_Months__c}"
+                                                var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:input name="coBuyerHomePayment"
+                                             label="Co-buyer Home Payment"
+                                             class="slds-m-top--small"
+                                             required="true"
+                                             value="{!v.creditApplication.Co_Applicant_House_Payment__c}"
+                                             disabled="{!empty(v.cobuyer)}"
+                                             onblur="{!c.fixInputField}"/>
+                        </div>
+                    </lightning:layoutItem>
+                </lightning:layout>
+
+                <div aura:id="previous-housing-information"
+                     class="slds-page-header slds-has-bottom-magnet slds-m-top--large">
+                    <div class="slds-media slds-media--center">
+                        <div class="slds-media__figure">
+                            <lightning:icon iconName="custom:custom85" class="slds-icon"/>
+                        </div>
+                        <div class="slds-media__body">
+                            <p class="slds-page-header__title slds-truncate">Previous Housing Information</p>
+                        </div>
+                    </div>
+                </div>
+
+                <lightning:layout horizontalAlign="center" multipleRows="true" class="slds-has-top-magnet">
+                    <lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top&#45;&#45;large">
+                        <div aura:id="buyer-info" >
+                            <lightning:input aura:id="buyer-previous-housing"
+                                             name="previousAddressStreet"
+                                             label="Previous Address Street"
+                                             value="{!v.creditApplication.dealer__Previous_Address_1_Street__c}"
+                                             required="{!not(v.previousBuyerAddressDisabled)}"
+                                             disabled="{!v.previousBuyerAddressDisabled}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:input aura:id="buyer-previous-housing"
+                                             name="previousAddress2"
+                                             label="Previous Address 2"
+                                             class="slds-m-top--small"
+                                             value="{!v.creditApplication.Previous_Address_2__c}"
+                                             required="{!not(v.previousBuyerAddressDisabled)}"
+                                             disabled="{!v.previousBuyerAddressDisabled}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:input aura:id="buyer-previous-housing"
+                                             name="previousAddressCity"
+                                             label="Previous Address City"
+                                             class="slds-m-top--small"
+                                             value="{!v.creditApplication.dealer__Previous_Address_1_City__c}"
+                                             required="{!not(v.previousBuyerAddressDisabled)}"
+                                             disabled="{!v.previousBuyerAddressDisabled}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:select aura:id="buyer-previous-housing"
+                                              name="currentAddressState"
+                                              label="Previous Address State"
+                                              class="slds-m-top--small"
+                                              value="{!v.creditApplication.Previous_Address_1_State__c}"
+                                              required="{!not(v.previousBuyerAddressDisabled)}"
+                                              disabled="{!v.previousBuyerAddressDisabled}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Current_Address_State__c}" var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:input aura:id="buyer-previous-housing"
+                                             name="previousAddressZip"
+                                             label="Previous Address Zip"
+                                             class="slds-m-top--small"
+                                             value="{!v.creditApplication.dealer__Previous_Address_1_Zip__c}"
+                                             required="{!not(v.previousBuyerAddressDisabled)}"
+                                             pattern="^$|^[0-9]{5}$|^[0-9]{5}-[0-9]{4}$"
+                                             disabled="{!v.previousBuyerAddressDisabled}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:select aura:id="buyer-previous-housing"
+                                              name="previousAddressDurationYears"
+                                              label="Previous Address Duration (Years)"
+                                              class="slds-m-top--small"
+                                              value="{!v.creditApplication.Previous_Address_Duration_Years__c}"
+                                              required="{!not(v.previousBuyerAddressDisabled)}"
+                                              disabled="{!v.previousBuyerAddressDisabled}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Current_Address_Duration_Years__c}" var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:select aura:id="buyer-previous-housing"
+                                              name="previousAddressDurationMonths"
+                                              label="Previous Address Duration (Months)"
+                                              class="slds-m-top--small"
+                                              value="{!v.creditApplication.Previous_Address_Duration_Months__c}"
+                                              required="{!not(v.previousBuyerAddressDisabled)}"
+                                              disabled="{!v.previousBuyerAddressDisabled}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Current_Address_Duration_Months__c}"
+                                                var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+                        </div>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top&#45;&#45;large">
+                        <div aura:id="cobuyer-info" >
+                            <lightning:input aura:id="cobuyer-previous-housing"
+                                             name="coBuyerPreviousAddressStreet"
+                                             label="Co-buyer Previous Address Street"
+                                             required="{!not(v.previousCoBuyerAddressDisabled)}"
+                                             value="{!v.creditApplication.dealer__Co_App_Previous_Address_1_Street__c}"
+                                             disabled="{!or(empty(v.cobuyer), v.previousCoBuyerAddressDisabled)}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:input aura:id="cobuyer-previous-housing"
+                                             name="coBuyerPreviousAddress2"
+                                             label="Co-buyer Previous Address 2"
+                                             class="slds-m-top--small"
+                                             required="{!not(v.previousCoBuyerAddressDisabled)}"
+                                             value="{!v.creditApplication.Co_App_Previous_Address_2__c}"
+                                             disabled="{!or(empty(v.cobuyer), v.previousCoBuyerAddressDisabled)}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:input aura:id="cobuyer-previous-housing"
+                                             name="coBuyerPreviousAddressCity"
+                                             label="Co-buyer Previous Address City"
+                                             class="slds-m-top--small"
+                                             required="{!not(v.previousCoBuyerAddressDisabled)}"
+                                             value="{!v.creditApplication.dealer__Co_App_Previous_Address_1_City__c}"
+                                             disabled="{!or(empty(v.cobuyer), v.previousCoBuyerAddressDisabled)}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:select aura:id="cobuyer-previous-housing"
+                                              name="coBuyerCurrentAddressState"
+                                              label="Co-buyer Previous Address State"
+                                              class="slds-m-top--small"
+                                              required="{!not(v.previousCoBuyerAddressDisabled)}"
+                                              value="{!v.creditApplication.Co_App_Prev_Address_1_State__c}"
+                                              disabled="{!or(empty(v.cobuyer), v.previousCoBuyerAddressDisabled)}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Current_Address_State__c}" var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:input aura:id="cobuyer-previous-housing"
+                                             name="coBuyerPreviousAddressZip"
+                                             label="Co-buyer Previous Address Zip"
+                                             class="slds-m-top--small"
+                                             required="{!not(v.previousCoBuyerAddressDisabled)}"
+                                             value="{!v.creditApplication.dealer__Co_App_Prev_Address_1_Zip__c}"
+                                             pattern="^$|^[0-9]{5}$|^[0-9]{5}-[0-9]{4}$"
+                                             disabled="{!or(empty(v.cobuyer), v.previousCoBuyerAddressDisabled)}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:select aura:id="cobuyer-previous-housing"
+                                              name="coBuyerCurrentAddressDurationYears"
+                                              label="Co-buyer Previous Address Duration (Years)"
+                                              class="slds-m-top--small"
+                                              required="{!not(v.previousCoBuyerAddressDisabled)}"
+                                              value="{!v.creditApplication.Co_App_Prev_Address_Duration_Years__c}"
+                                              disabled="{!or(empty(v.cobuyer), v.previousCoBuyerAddressDisabled)}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Current_Address_Duration_Years__c}" var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:select aura:id="cobuyer-previous-housing"
+                                              name="coBuyerCurrentAddressDurationMonths"
+                                              label="Co-buyer Previous Address Duration (Months)"
+                                              class="slds-m-top--small"
+                                              required="{!not(v.previousCoBuyerAddressDisabled)}"
+                                              value="{!v.creditApplication.Co_App_Prev_Address_Duration_Months__c}"
+                                              disabled="{!or(empty(v.cobuyer), v.previousCoBuyerAddressDisabled)}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Current_Address_Duration_Months__c}"
+                                                var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+                        </div>
+                    </lightning:layoutItem>
+                </lightning:layout>
+
+                <div aura:id="employment-information" class="slds-page-header slds-has-bottom-magnet slds-m-top--large">
+                    <div class="slds-media slds-media--center">
+                        <div class="slds-media__figure">
+                            <lightning:icon iconName="custom:custom84" class="slds-icon"/>
+                        </div>
+                        <div class="slds-media__body">
+                            <p class="slds-page-header__title slds-truncate">Employment Information</p>
+                        </div>
+                    </div>
+                </div>
+
+                <lightning:layout horizontalAlign="center" multipleRows="true" class="slds-has-top-magnet">
+                    <lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top&#45;&#45;large">
+                        <div aura:id="buyer-info" >
+                            <lightning:input name="presentEmployer"
+                                             label="Present Employer"
+                                             required="true"
+                                             value="{!v.creditApplication.dealer__Present_Employer__c}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:input name="presentEmployerAddress"
+                                             label="Present Employer Address"
+                                             class="slds-m-top--small"
+                                             required="true"
+                                             value="{!v.creditApplication.dealer__Present_Employer_Street__c}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:input name="presentEmployerCity"
+                                             label="Present Employer City"
+                                             class="slds-m-top--small"
+                                             required="true"
+                                             value="{!v.creditApplication.dealer__Present_Employer_City__c}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:select name="presentEmployerState"
+                                              label="Present Employer State"
+                                              required="true"
+                                              value="{!v.creditApplication.Present_Employer_State__c}"
+                                              class="slds-m-top--small"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Present_Employer_State__c}" var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:input name="presentEmployerZip"
+                                             label="Present Employer Zip"
+                                             value="{!v.creditApplication.dealer__Present_Employer_Zip__c}"
+                                             required="true"
+                                             class="slds-m-top--small"
+                                             pattern="^$|^[0-9]{5}$|^[0-9]{5}-[0-9]{4}$"
+                                             messageWhenPatternMismatch="ZIP code has incorrect value. Use 12345 or 12345-6789 format."
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:input name="occupationOrRank"
+                                             label="Occupation Or Rank"
+                                             required="true"
+                                             value="{!v.creditApplication.dealer__Occupation_Or_Rank__c}"
+                                             class="slds-m-top--small"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:input name="presentEmployerPhone"
+                                             label="Present Employer Phone"
+                                             class="slds-m-top--small"
+                                             required="true"
+                                             value="{!v.creditApplication.dealer__Present_Employer_Phone__c}"
+                                             pattern="^\\([0-9]{3}\\) [0-9]{3}-[0-9]{4}$|^[0-9]{3}-[0-9]{3}-[0-9]{4}$"
+                                             messageWhenPatternMismatch="Valid phone formats are '(123) 456-7890' or '123-456-7890'"
+                                             onchange="{!c.setValidPhoneFormat}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:select name="presentEmployerDurationYears"
+                                              label="Present Employer Duration (Years)"
+                                              required="true"
+                                              class="slds-m-top--small"
+                                              value="{!v.creditApplication.Present_Employer_Duration_Years__c}"
+                                              onchange="{!c.handlePreviuosEmoloyerEnabling}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Present_Employer_Duration_Years__c}"
+                                                var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:select name="presentEmployerDurationMonths"
+                                              label="Present Employer Duration (Months)"
+                                              required="true"
+                                              class="slds-m-top--small"
+                                              value="{!v.creditApplication.Present_Employer_Duration_Months__c}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Present_Employer_Duration_Months__c}"
+                                                var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:input name="netPeriodPaycheck"
+                                             label="Applicant's Net Period Paycheck"
+                                             class="slds-m-top--small"
+                                             required="true"
+                                             value="{!v.creditApplication.Net_Period_Paycheck__c}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:select name="salaryType"
+                                              label="Salary Type"
+                                              required="true"
+                                              class="slds-m-top--small"
+                                              value="{!v.creditApplication.Salary_Type__c}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Salary_Type__c}" var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:input name="otherIncome"
+                                             label="Other Income"
+                                             class="slds-m-top--small"
+                                             required="true"
+                                             value="{!v.creditApplication.Other_Income__c}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:input aura:id="buyer-previous-employer"
+                                             label="Previous Employer" name="previousEmployer"
+                                             class="slds-m-top--small"
+                                             required="true"
+                                             value="{!v.creditApplication.dealer__Previous_Employer_1__c}"
+                                             disabled="{!v.previousBuyerEmployerDisabled}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:select aura:id="buyer-previous-employer"
+                                              name="previousEmployerDurationYears"
+                                              label="Previous Employer Duration (Years)"
+                                              required="true"
+                                              class="slds-m-top--small"
+                                              value="{!v.creditApplication.Previous_Employer_1_Duration_Years__c}"
+                                              disabled="{!v.previousBuyerEmployerDisabled}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Present_Employer_Duration_Years__c}"
+                                                var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:select aura:id="buyer-previous-employer"
+                                              name="previousEmployerDurationMonths"
+                                              label="Previous Employer Duration (Months)"
+                                              required="true"
+                                              class="slds-m-top--small"
+                                              value="{!v.creditApplication.Previous_Employer_1_Duration_Months__c}"
+                                              disabled="{!v.previousBuyerEmployerDisabled}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Present_Employer_Duration_Months__c}"
+                                                var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+                        </div>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top&#45;&#45;large">
+                        <div aura:id="cobuyer-info" >
+                            <lightning:input name="coBuyerPresentEmployer"
+                                             label="Co-buyer Present Employer"
+                                             required="true"
+                                             value="{!v.creditApplication.dealer__Co_App_Present_Employer__c}"
+                                             disabled="{!empty(v.cobuyer)}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:input name="coBuyerPresentEmployerAddress"
+                                             label="Co-buyer Present Employer Address"
+                                             class="slds-m-top--small"
+                                             required="true"
+                                             value="{!v.creditApplication.dealer__Co_App_Present_Employer_Street__c}"
+                                             disabled="{!empty(v.cobuyer)}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:input name="coBuyerPresentEmployerCity"
+                                             label="Co-buyer Present Employer City"
+                                             class="slds-m-top--small"
+                                             required="true"
+                                             value="{!v.creditApplication.dealer__Co_App_Present_Employer_City__c}"
+                                             disabled="{!empty(v.cobuyer)}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:select name="coBuyerPresentEmployerState"
+                                              label="Co-buyer Present Employer State"
+                                              required="true"
+                                              class="slds-m-top--small"
+                                              value="{!v.creditApplication.Co_App_Present_Employer_State__c}"
+                                              disabled="{!empty(v.cobuyer)}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Present_Employer_State__c}" var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:input name="coBuyerPresentEmployerZip"
+                                             label="Co-buyer Present Employer Zip"
+                                             class="slds-m-top--small"
+                                             required="true"
+                                             value="{!v.creditApplication.dealer__Co_App_Present_Employer_Zip__c}"
+                                             pattern="^$|^[0-9]{5}$|^[0-9]{5}-[0-9]{4}$"
+                                             messageWhenPatternMismatch="ZIP code has incorrect value. Use 12345 or 12345-6789 format."
+                                             disabled="{!empty(v.cobuyer)}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:input name="coBuyerOccupationOrRank"
+                                             label="Co-buyer Occupation Or Rank"
+                                             class="slds-m-top--small"
+                                             required="true"
+                                             value="{!v.creditApplication.dealer__Co_App_Occupation_Or_Rank__c}"
+                                             disabled="{!empty(v.cobuyer)}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:input name="coBuyerPresentEmployerPhone"
+                                             label="Co-buyer Present Employer Phone"
+                                             class="slds-m-top--small"
+                                             required="true"
+                                             value="{!v.creditApplication.dealer__Co_App_Present_Employer_Phone__c}"
+                                             pattern="^\\([0-9]{3}\\) [0-9]{3}-[0-9]{4}$|^[0-9]{3}-[0-9]{3}-[0-9]{4}$"
+                                             messageWhenPatternMismatch="Valid phone formats are '(123) 456-7890' or '123-456-7890'"
+                                             onchange="{!c.setValidPhoneFormat}"
+                                             disabled="{!empty(v.cobuyer)}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:select name="coBuyerPresentEmployerDurationYears"
+                                              label="Co-buyer Present Employer Duration (Years)"
+                                              required="true"
+                                              class="slds-m-top--small"
+                                              value="{!v.creditApplication.Co_App_Present_Employer_Duration_Years__c}"
+                                              onchange="{!c.handlePreviuosEmoloyerEnabling}"
+                                              disabled="{!empty(v.cobuyer)}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Present_Employer_Duration_Years__c}"
+                                                var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:select name="coBuyerPresentEmployerDurationMonths"
+                                              label="Co-buyer Present Employer Duration (Months)"
+                                              required="true"
+                                              class="slds-m-top--small"
+                                              value="{!v.creditApplication.Co_App_Present_Employer_Duration_Month__c}"
+                                              disabled="{!empty(v.cobuyer)}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Present_Employer_Duration_Months__c}"
+                                                var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:input name="coBuyerNetPeriodPaycheck"
+                                             label="Co-buyer Applicant's Net Period Paycheck"
+                                             class="slds-m-top--small"
+                                             required="true"
+                                             value="{!v.creditApplication.Co_App_Net_Period_Paycheck__c}"
+                                             disabled="{!empty(v.cobuyer)}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:select name="coBuyerSalaryType"
+                                              label="Co-buyer Salary Type"
+                                              required="true"
+                                              class="slds-m-top--small"
+                                              value="{!v.creditApplication.Co_App_Salary_Type__c}"
+                                              disabled="{!empty(v.cobuyer)}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Salary_Type__c}" var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:input name="coBuyerOtherIncome"
+                                             label="Co-buyer Other Income"
+                                             class="slds-m-top--small"
+                                             required="true"
+                                             value="{!v.creditApplication.Co_App_Other_Income__c}"
+                                             disabled="{!empty(v.cobuyer)}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:input aura:id="cobuyer-previous-employer"
+                                             name="coBuyerPreviousEmployer"
+                                             label="Co-buyer Previous Employer"
+                                             class="slds-m-top--small"
+                                             required="true"
+                                             value="{!v.creditApplication.dealer__Co_App_Previous_Employer_1__c}"
+                                             disabled="{!or(empty(v.cobuyer), v.previousCoBuyerEmployerDisabled)}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <lightning:select aura:id="cobuyer-previous-employer"
+                                              name="coBuyerPreviousEmployerDurationYears"
+                                              label="Co-buyer Previous Employer Duration (Years)"
+                                              required="true"
+                                              class="slds-m-top--small"
+                                              value="{!v.creditApplication.Co_App_Previous_Employer_1_Duration_Y__c}"
+                                              disabled="{!or(empty(v.cobuyer), v.previousCoBuyerEmployerDisabled)}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Present_Employer_Duration_Years__c}"
+                                                var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:select aura:id="cobuyer-previous-employer"
+                                              name="coBuyerPreviousEmployerDurationMonths"
+                                              label="Co-buyer Previous Employer Duration (Months)"
+                                              required="true"
+                                              value="{!v.creditApplication.Co_App_Previous_Employer_1_Duration_M__c}"
+                                              class="slds-m-top--small"
+                                              disabled="{!or(empty(v.cobuyer), v.previousCoBuyerEmployerDisabled)}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Present_Employer_Duration_Months__c}"
+                                                var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+                        </div>
+                    </lightning:layoutItem>
+                </lightning:layout>
+
+                <div aura:id="credit-history" class="slds-page-header slds-has-bottom-magnet slds-m-top--large">
+                    <div class="slds-media slds-media--center">
+                        <div class="slds-media__figure">
+                            <lightning:icon iconName="standard:client" class="slds-icon"/>
+                        </div>
+                        <div class="slds-media__body">
+                            <p class="slds-page-header__title slds-truncate">Credit History</p>
+                        </div>
+                    </div>
+                </div>
+
+                <lightning:layout horizontalAlign="center" multipleRows="true" class="slds-has-top-magnet">
+                    <lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top&#45;&#45;large">
+                        <div aura:id="buyer-info" >
+                            <lightning:input name="downPayment"
+                                             label="Available Down Payment"
+                                             required="true"
+                                             value="{!v.creditApplication.Available_Down_Payment__c}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <ui:inputCheckbox name="carRepossessed"
+                                              label="Car Repossessed"
+                                              class="slds-m-bottom--small"
+                                              value="{!v.creditApplication.Car_Repossessed__c}"/>
+
+                            <ui:inputCheckbox name="currentlyInBancruptcy"
+                                              label="Currently in Bankruptcy?"
+                                              class="slds-m-bottom--small"
+                                              value="{!v.creditApplication.Currently_in_bankruptcy__c}"/>
+
+                            <ui:inputCheckbox name="everFiledBancruptcy"
+                                              label="Ever Filed Bankruptcy or Chapter 13?"
+                                              class="slds-m-bottom--small"
+                                              value="{!v.creditApplication.Ever_filed_Bankruptcy_or_Chapter_13__c}"/>
+
+                        </div>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top&#45;&#45;large">
+                        <div aura:id="cobuyer-info" >
+                            <lightning:input name="coBuyerDownPayment"
+                                             label="Co-buyer Available Down Payment"
+                                             required="true"
+                                             value="{!v.creditApplication.Co_App_Available_Down_Payment__c}"
+                                             disabled="{!empty(v.cobuyer)}"
+                                             onblur="{!c.fixInputField}"/>
+
+                            <ui:inputCheckbox name="coBuyerCarRepossessed"
+                                              label="Co-buyer Car Repossessed"
+                                              class="slds-m-bottom--small"
+                                              value="{!v.creditApplication.Co_App_car_repossessed__c}"
+                                              disabled="{!empty(v.cobuyer)}"/>
+
+                            <ui:inputCheckbox name="cobuyerCurrentlyInBancruptcy"
+                                              label="Co-buyer Currently in Bankruptcy?"
+                                              class="slds-m-bottom--small"
+                                              value="{!v.creditApplication.Co_App_currently_in_bankruptcy__c}"
+                                              disabled="{!empty(v.cobuyer)}"/>
+
+                            <ui:inputCheckbox name="coBuyerEverFiledBancruptcy"
+                                              label="Co-buyer Ever Filed Bankruptcy or Chapter 13?"
+                                              class="slds-m-bottom--small"
+                                              value="{!v.creditApplication.Co_App_gone_through_bankruptcy__c}"
+                                              disabled="{!empty(v.cobuyer)}"/>
+                        </div>
+                    </lightning:layoutItem>
+                </lightning:layout>
+
+                <div aura:id="military-expirience" class="slds-page-header slds-has-bottom-magnet slds-m-top--large">
+                    <div class="slds-media slds-media--center">
+                        <div class="slds-media__figure">
+                            <lightning:icon iconName="standard:client" class="slds-icon"/>
+                        </div>
+                        <div class="slds-media__body">
+                            <p class="slds-page-header__title slds-truncate">Military Experience</p>
+                        </div>
+                    </div>
+                </div>
+
+                <lightning:layout horizontalAlign="center" multipleRows="true" class="slds-has-top-magnet">
+                    <lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top&#45;&#45;large">
+                        <div aura:id="buyer-info">
+                            <ui:inputCheckbox name="isMilitary"
+                                              label="Is Military"
+                                              change="{!c.handleMiliraryEnabling}"
+                                              value="{!v.creditApplication.Is_Military__c}"/>
+
+                            <lightning:select aura:id="buyer-military"
+                                              name="militaryStatus"
+                                              label="Militarty Status"
+                                              required="true"
+                                              class="slds-m-top--small"
+                                              value="{!v.creditApplication.Military_Status__c}"
+                                              disabled="{!v.buyerMilitaryDisabled}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Military_Status__c}" var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+                        </div>
+                    </lightning:layoutItem>
+                    <lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top&#45;&#45;large">
+                        <div aura:id="cobuyer-info">
+                            <ui:inputCheckbox name="coIsMilitary"
+                                              label="Co-Buyer Is Military"
+                                              change="{!c.handleMiliraryEnabling}"
+                                              value="{!v.creditApplication.Co_App_Is_Military__c}"
+                                              disabled="{!empty(v.cobuyer)}"/>
+
+                            <lightning:select aura:id="cobuyer-military"
+                                              name="coMilitaryStatus"
+                                              label="Co-Buyer Military Status"
+                                              required="true"
+                                              class="slds-m-top--small"
+                                              value="{!v.creditApplication.Co_App_Military_Status__c}"
+                                              disabled="{!or(empty(v.cobuyer), v.coBuyerMilitaryDisabled)}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Military_Status__c}" var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+                        </div>
+                    </lightning:layoutItem>
+                </lightning:layout>
+
+                <div aura:id="repeat-customer" class="slds-page-header slds-has-bottom-magnet slds-m-top--large">
+                    <div class="slds-media slds-media--center">
+                        <div class="slds-media__figure">
+                            <lightning:icon iconName="custom:custom14" class="slds-icon"/>
+                        </div>
+                        <div class="slds-media__body">
+                            <p class="slds-page-header__title slds-truncate">Repeat Customer?</p>
+                        </div>
+                    </div>
+                </div>
+
+                <lightning:layout horizontalAlign="center" multipleRows="true" class="slds-has-top-magnet">
+                    <lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top&#45;&#45;large">
+                        <div aura:id="buyer-info" >
+                            <lightning:select name="repeatCustomer"
+                                              label="Repeat Customer?"
+                                              value="{!v.creditApplication.Repeat_Customer__c}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Repeat_Customer__c}" var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:select name="repeatReason"
+                                              label="Repeat Reason"
+                                              class="slds-m-top--small"
+                                              value="{!v.creditApplication.Repeat_Reason__c}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Repeat_Reason__c}" var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:input name="previousAccountNumber"
+                                             label="Previous Account Number"
+                                             class="slds-m-top--small"
+                                             value="{!v.creditApplication.Previous_Account_Number__c}"
+                                             onblur="{!c.fixInputField}"/>
+                        </div>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top&#45;&#45;large">
+                        <div aura:id="cobuyer-info" >
+                            <lightning:select name="coBuyerRepeatCustomer"
+                                              label="Co-buyer Repeat Customer?"
+                                              value="{!v.creditApplication.Co_App_Repeat_Customer__c}"
+                                              disabled="{!empty(v.cobuyer)}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Repeat_Customer__c}" var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:select name="coBuyerRepeatReason"
+                                              label="Co-buyer Repeat Reason"
+                                              class="slds-m-top--small"
+                                              value="{!v.creditApplication.Co_App_Repeat_Reason__c}"
+                                              disabled="{!empty(v.cobuyer)}"
+                                              onblur="{!c.fixInputField}"
+                            >
+                                <aura:iteration items="{!v.picklists.Repeat_Reason__c}" var="picklistItem">
+                                    <option value="{!picklistItem.value}">{!picklistItem.label}</option>
+                                </aura:iteration>
+                            </lightning:select>
+
+                            <lightning:input name="coBuyerPreviousAccountNumber"
+                                             label="Co-buyer Previous Account Number"
+                                             class="slds-m-top--small"
+                                             value="{!v.creditApplication.Co_App_Previous_Account_Number__c}"
+                                             disabled="{!empty(v.cobuyer)}"
+                                             onblur="{!c.fixInputField}"/>
+                        </div>
+                    </lightning:layoutItem>
+                </lightning:layout>
+
+
+                <div aura:id="optional-message" class="slds-page-header slds-has-bottom-magnet slds-m-top--large">
+                    <div class="slds-media slds-media--center">
+                        <div class="slds-media__figure">
+                            <lightning:icon iconName="standard:post" class="slds-icon"/>
+                        </div>
+                        <div class="slds-media__body">
+                            <p class="slds-page-header__title slds-truncate">Optional Message to Underwriting</p>
+                        </div>
+                    </div>
+                </div>
+
+                <lightning:layout horizontalAlign="center" multipleRows="true" class="slds-has-top-magnet">
+                    <lightning:layoutItem size="12" padding="horizontal-large"
+                                          class="slds-m-top--large slds-m-bottom--medium">
+                        <lightning:textarea label="Message" name="message"
+                                            value="{!v.creditApplication.Credit_Application_Comment__c}"/>
+                    </lightning:layoutItem>
+                </lightning:layout>
+            </div>
+        </lightning:layoutItem>
+    </lightning:layout>
+
+    <aura:if isTrue="{!v.addCobuyerModal}">
+        <div class="demo-only" style="height: 20rem;">
+            <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close">
+                            <a onclick="{!c.closeModal}">
+                                <lightning:icon iconName="utility:close"/>
+                                <span class="slds-assistive-text">Close</span>
+                            </a>
+                        </button>
+                        <h2  class="slds-text-heading_medium slds-hyphenate">Add Co-Buyer</h2>
+                    </header>
+                    <lightning:layout multipleRows="true" class="slds-modal__content slds-p-around_medium">
+                        <lightning:layoutItem size="12">
+                            <lightning:input name="coBuyerSocialSecurityNumber"
+                                             label="Co-Buyer Social Security Number"
+                                             value="{!v.coBuyerSocialSecurityNumber}"
+                                             pattern="^[0-9]{9}$|^[0-9]{3}-[0-9]{2}-[0-9]{4}$"
+                                             messageWhenPatternMismatch="Correct formats for social security number are '123456789' or '123-45-6789'"
+                                             messageWhenBadInput="Co-Buyer Social Security Number couldn't be equals Buyer Social Security Number!"
+                                             onchange="{!c.validateSocialSecurityNumber}"
+                            />
+                        </lightning:layoutItem>
+                        <lightning:layoutItem size="12">
+                            <lightning:button aura:id="search-button" label="Search" disabled="true" class="slds-m-top--small" onclick="{!c.searchCobuyer}"/>
+                        </lightning:layoutItem>
+
+                        <lightning:layoutItem size="12" aura:id="add-cobuyer-modal-body">
+                            {!v.searchResult.coBuyerMessage}
+                            <aura:if isTrue="{!not(empty(v.searchResult.coBuyerSalesUpId))}">
+                                <a onclick="{!c.redirectToSalesUp}">Go to Sales Up</a>
+                            </aura:if>
+                        </lightning:layoutItem>
+
+                    </lightning:layout>
+                    <footer class="slds-modal__footer">
+                        <lightning:button label="Cancel" onclick="{!c.closeModal}"/>
+                        <lightning:button aura:id="save-button" label="Save" disabled="true" onclick="{!c.saveCoBuyer}"/>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </div>
+    </aura:if>
+
+    <aura:if isTrue="{!v.deleteCoBuyerModal}">
+        <div class="demo-only" style="height: 20rem;">
+            <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close">
+                            <a onclick="{!c.closeModal}">
+                                <lightning:icon iconName="utility:close"/>
+                                <span class="slds-assistive-text">Close</span>
+                            </a>
+                        </button>
+                        <h2  class="slds-text-heading_medium slds-hyphenate">Delete Co Buyer...</h2>
+                    </header>
+                    <lightning:layout multipleRows="true" class="slds-modal__content slds-p-around_medium">
+                        <lightning:layoutItem size="12" class="slds-grid slds-grid--align-center">
+                           Are you sure to delete Co Buyer?
+                        </lightning:layoutItem>
+                    </lightning:layout>
+                    <footer class="slds-modal__footer">
+                        <lightning:layoutItem size="12" class="slds-text-align--center">
+                            <lightning:button label="Yes" onclick="{!c.deleteCoBuyer}"/>
+                            <lightning:button label="No" onclick="{!c.closeModal}"/>
+                        </lightning:layoutItem>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </div>
+    </aura:if>
+
+    <aura:if isTrue="{!v.finishEditModal}">
+        <div class="demo-only" style="height: 20rem;">
+            <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close">
+                            <a onclick="{!c.closeModal}">
+                                <lightning:icon iconName="utility:close"/>
+                                <span class="slds-assistive-text">Close</span>
+                            </a>
+                        </button>
+                        <h2  class="slds-text-heading_medium slds-hyphenate">Saving...</h2>
+                    </header>
+                    <lightning:layout multipleRows="true" class="slds-modal__content slds-p-around_medium">
+                        <lightning:layoutItem size="12" class="slds-grid slds-grid--align-center">
+                            <aura:if isTrue="{!v.isFormValid}">
+                                Credit Application is ready for Submit. Click Finish to continue.
+                                <aura:set attribute="else">
+                                    Credit Application is not ready for Submit. Fill required information or save it and edit later.
+                                </aura:set>
+                            </aura:if>
+                        </lightning:layoutItem>
+                    </lightning:layout>
+                    <footer class="slds-modal__footer">
+                        <lightning:layoutItem size="12" class="slds-text-align--center">
+                            <aura:if isTrue="{!v.isFormValid}">
+                                <lightning:button aura:id="search-button" label="Ready To Submit" variant="brand" onclick="{!c.finishSaveCreditApplication}"/>
+                                <lightning:button aura:id="search-button" label="Cancel" onclick="{!c.closeModal}"/>
+
+                                <aura:set attribute="else">
+                                    <lightning:button aura:id="search-button" label="Save And Edit Later" onclick="{!c.finishSaveCreditApplication}"/>
+                                    <lightning:button aura:id="search-button" label="Edit Now"  onclick="{!c.closeModal}"/>
+                                </aura:set>
+                            </aura:if>
+
+                        </lightning:layoutItem>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </div>
+    </aura:if>
+
+    <aura:if aura:id="component-action-spinner" isTrue="true">
+        <lightning:spinner variant="brand" size="large"/>
+    </aura:if>
+</aura:component>

@@ -1,0 +1,9 @@
+.THIS.slds-card {
+    height: calc(100% - 5.5rem);
+    overflow: hidden;
+}
+
+.THIS .credit-app-form {
+    height: 100%;
+    overflow-y: auto;
+}

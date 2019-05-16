@@ -1,0 +1,63 @@
+<!--
+ - Created by admin on 4/25/18.
+ -->
+
+<aura:component controller="fetch_callout" description="creditAppCardInsurance"
+                implements="flexipage:availableForRecordHome,force:hasRecordId" access="global">
+
+    <aura:attribute name="vin" type="String"  /> <!-- default="5NPE24AF2GH360278" -->
+    <aura:attribute name="processed" type="String" default="Fetch request sent to guest. You may enter another vin for a new quote request." />
+    <aura:attribute name="showProcessed" type="Boolean" default="false" description="determines when to show the processed message" />
+
+    <div class="slds-card slds-p-top--medium slds-text-align--left">
+
+        <lightning:layout horizontalAlign="spread">
+            <lightning:layoutItem class="slds-text-align--left" >
+                <lightning:icon iconName="custom:custom31" class="slds-m-right--small slds-col slds-no-flex" size="small" />
+                <span style="font-size: medium; font-weight: bold">Insurance Quote Request</span>
+                <span style="font-style: italic">  (Create Credit Application First)</span>
+            </lightning:layoutItem>
+        </lightning:layout>
+
+        <lightning:layout horizontalAlign="center">
+            <lightning:layoutItem padding="around-small" class="slds-text-align--left">
+                <lightning:input variant="standard" label="Enter Vin" class="slds-input" aura:id="vin" value="{!v.vin}" type="text" />
+            </lightning:layoutItem>
+        </lightning:layout>
+
+        <aura:if isTrue="{!v.showProcessed}">
+            <lightning:layout horizontalAlign="center">
+                <lightning:layoutItem padding="around-small" class="slds-text-align--left">
+                    <lightning:formattedText value="{!v.processed}" title="Processed Message" linkify="false" class="" />
+                </lightning:layoutItem>
+            </lightning:layout>
+        </aura:if>
+
+        <lightning:layout horizontalAlign="center" class="slds-m-bottom--small" multipleRows="true">
+            <lightning:layoutItem >
+                <lightning:button class="slds-align_absolute-center" variant="brand" label="Request Insurance Quote"
+                                  iconName="action:update_status" iconPosition="left"
+                                  onclick="{! c.handleClick }" />
+            </lightning:layoutItem>
+        </lightning:layout>
+
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</aura:component>

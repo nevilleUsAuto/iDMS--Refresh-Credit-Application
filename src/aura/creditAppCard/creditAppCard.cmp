@@ -1,0 +1,66 @@
+<aura:component controller="CreditAppCardComponentController">
+    <aura:dependency resource="markup://c:creditAppCardBeforePaycall"/>
+    <aura:dependency resource="markup://c:creditAppCardBeforeCarSelected"/>
+    <aura:dependency resource="markup://c:creditAppCardBeforeDelivered"/>
+
+    <aura:attribute name="creditApp" type="Credit_Application__c" required="true" />
+
+	<aura:attribute name="employment" type="Employment__c" />
+    <aura:attribute name="userProfile" type="String"/>
+    <aura:attribute name="salesPortalAccessToken" type="String"/>
+
+    <ltng:require scripts="{!$Resource.commonHelper}" afterScriptsLoaded="{!c.init}"/>
+
+    <div class="slds-card__header slds-grid">
+        <header class="slds-media slds-media_center slds-has-flexi-truncate">
+            <div class="slds-media__figure">
+                <span class="slds-icon_container slds-icon-standard-contact">
+                    <lightning:icon iconName="standard:contact"/>
+                </span>
+            </div>
+
+            <lightning:layout verticalAlign="center" horizontalAlign="spread" class="slds-media__body " multipleRows="false">
+                <lightning:layoutItem size="6">
+                    <span class="slds-show slds-text-heading_small slds-truncate">
+                        Progress
+                    </span>
+                </lightning:layoutItem>
+
+                <lightning:layoutItem size="6">
+                    <lightning:layoutItem size="12">
+                        <lightning:layout horizontalAlign="end">
+                            <aura:if isTrue="{!not(empty(v.creditApp.Credit_Application_Comment__c))}">
+                                <c:popover iconName="utility:warning" isVisible="true" popoverClass="slds-popover slds-nubbin--top-right slds-theme--error comment-popover-position" iconClass="slds-button_icon-error">
+                                    <aura:set attribute="popoverContent">
+                                        <div class="slds-popover__body">
+                                            <span>{!v.creditApp.Last_Comment_Left_By__c + ' : ' + v.creditApp.Credit_Application_Comment__c}</span>
+                                        </div>
+                                    </aura:set>
+                                </c:popover>
+                            </aura:if>
+
+                            <span class="slds-show slds-text-heading_small slds-truncate" title="{!v.creditApp.Credit_Application_Status__c}">
+                                {!v.creditApp.Credit_Application_Status__c}
+                            </span>
+                        </lightning:layout>
+                    </lightning:layoutItem>
+
+                    <aura:if isTrue="{!not(empty(v.creditApp.Sales_Portal_ID__c))}">
+                        <lightning:layoutItem size="12" class="slds-show slds-text-heading_small slds-truncate">
+                            <lightning:layout horizontalAlign="end">
+                                <span title="{!'Deal ID: ' + v.creditApp.Sales_Portal_ID__c}">
+                                    Deal ID: {!v.creditApp.Sales_Portal_ID__c}
+                                </span>
+                            </lightning:layout>
+                        </lightning:layoutItem>
+                    </aura:if>
+                </lightning:layoutItem>
+            </lightning:layout>
+        </header>
+    </div>
+
+    <lightning:layoutItem aura:id="card-container">
+        <c:creditAppCardBeforePaycall />
+    </lightning:layoutItem>
+
+</aura:component>

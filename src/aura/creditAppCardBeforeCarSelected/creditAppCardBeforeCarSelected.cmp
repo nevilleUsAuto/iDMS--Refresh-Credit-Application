@@ -1,0 +1,277 @@
+<aura:component controller="CreditAppCardComponentController" implements="flexipage:availableForRecordHome,force:hasRecordId" access="global">
+
+    <aura:attribute name="creditApp" type="Credit_Application__c" />
+    <aura:attribute name="adjustedScores" type="SalesPortalAPIResponses.RegularApplicationAdjustedScores" />
+    <aura:attribute name="userProfile" type="String" />
+    <aura:attribute name="salesPortalAccessToken" type="String" />
+
+    <aura:handler name="init" value="{!this}" action="{!c.init}"/>
+
+    <aura:registerEvent name="reloadBox" type="c:refresh" />
+    <aura:registerEvent name="showSpinner" type="c:showSpinner" />
+    <aura:registerEvent name="hideSpinner" type="c:hideSpinner" />
+    <aura:registerEvent name="reloadForm" type="c:reloadForm"/>
+
+    <lightning:layout class="slds-card__body slds-card__body_inner">
+        <lightning:layoutItem size="6" class="slds-border--right slds-p-right--medium">
+            <lightning:layout horizontalAlign="center">
+                <h2 class="slds-text-title_caps">Buyer</h2>
+            </lightning:layout>
+
+            <lightning:layout multipleRows="true" class="slds-m-top--medium">
+                <lightning:layoutItem size="12" class="slds-has-divider--bottom slds-m-bottom--small" >
+                    <lightning:layout multipleRows="true" horizontalAlign="spread">
+                        <lightning:layoutItem class="slds-text-color--weak">
+                            <span>% Down &ge; 16995:</span>
+                        </lightning:layoutItem>
+
+                        <lightning:layoutItem >
+                            <lightning:formattedNumber value="{!v.adjustedScores.primaryScore.minimumDownPaymentOver}" style="percent" minimumFractionDigits="0" maximumFractionDigits="4"/>
+                        </lightning:layoutItem>
+                    </lightning:layout>
+                </lightning:layoutItem>
+
+                <lightning:layoutItem size="12" class="slds-has-divider--bottom slds-m-bottom--small" >
+                    <lightning:layout multipleRows="true" horizontalAlign="spread">
+                        <lightning:layoutItem class="slds-text-color--weak">
+                            <span>% Down &lt; 16995:</span>
+                        </lightning:layoutItem>
+
+                        <lightning:layoutItem >
+                           <lightning:formattedNumber value="{!v.adjustedScores.primaryScore.minimumDownPaymentUnder}" style="percent" minimumFractionDigits="0" maximumFractionDigits="4"/>
+                        </lightning:layoutItem>
+                    </lightning:layout>
+                </lightning:layoutItem>
+
+                <lightning:layoutItem size="12" class="slds-has-divider--bottom slds-m-bottom--small" >
+                    <lightning:layout multipleRows="true" horizontalAlign="spread">
+                        <lightning:layoutItem class="slds-text-color--weak">
+                            <span>Max Monthly:</span>
+                        </lightning:layoutItem>
+
+                        <lightning:layoutItem >
+                            <span>${!v.adjustedScores.primaryScore.maxMonthlyPayment}</span>
+                        </lightning:layoutItem>
+                    </lightning:layout>
+                </lightning:layoutItem>
+
+                <lightning:layoutItem size="12" class="slds-has-divider--bottom slds-m-bottom--small" >
+                    <lightning:layout multipleRows="true" horizontalAlign="spread">
+                        <lightning:layoutItem class="slds-text-color--weak">
+                            <span>Max Price:</span>
+                        </lightning:layoutItem>
+
+                        <lightning:layoutItem >
+                            <span>${!v.adjustedScores.primaryScore.maxPurchasePrice}</span>
+                        </lightning:layoutItem>
+                    </lightning:layout>
+                </lightning:layoutItem>
+
+                <lightning:layoutItem size="12" class="slds-has-divider--bottom slds-m-bottom--small" >
+                    <lightning:layout multipleRows="true" horizontalAlign="spread">
+                        <lightning:layoutItem class="slds-text-color--weak">
+                            <span>Customer Code:</span>
+                        </lightning:layoutItem>
+
+                        <lightning:layoutItem >
+                            <span>{!v.adjustedScores.primaryScore.customerCode}</span>
+                        </lightning:layoutItem>
+                    </lightning:layout>
+                </lightning:layoutItem>
+
+                <lightning:layoutItem size="12" class="slds-form-element slds-grid slds-grid--align-center slds-m-bottom--small">
+                    <lightning:button aura:id="singleLetter" label="Print Letter" onclick="{!c.getCreditScoreLetterPrinted}"/>
+                </lightning:layoutItem>
+
+                <lightning:layoutItem size="12" class="slds-form-element slds-grid slds-grid--align-center">
+                    <lightning:button aura:id="single" label="Select Vehicle" onclick="{!c.openInventoryGrid}" disabled="{!not(v.adjustedScores.primaryScore.isLetterPrinted)}"/>
+                </lightning:layoutItem>
+            </lightning:layout>
+        </lightning:layoutItem>
+
+        <lightning:layoutItem size="6" class="slds-p-left--medium">
+            <lightning:layout horizontalAlign="center">
+                <h2 class="slds-text-title_caps">Joint</h2>
+            </lightning:layout>
+
+            <aura:if isTrue="{!not(empty(v.adjustedScores.jointScore))}">
+                <lightning:layout multipleRows="true" class="slds-m-top--medium">
+                    <lightning:layoutItem size="12" class="slds-has-divider--bottom slds-m-bottom--small" >
+                        <lightning:layout multipleRows="true" horizontalAlign="spread">
+                            <lightning:layoutItem class="slds-text-color--weak">
+                                <span>% Down &ge; 16995:</span>
+                            </lightning:layoutItem>
+
+                            <lightning:layoutItem >
+                                <lightning:formattedNumber value="{!v.adjustedScores.jointScore.minimumDownPaymentOver}" style="percent" minimumFractionDigits="0" maximumFractionDigits="4"/>
+                            </lightning:layoutItem>
+                        </lightning:layout>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="12" class="slds-has-divider--bottom slds-m-bottom--small" >
+                        <lightning:layout multipleRows="true" horizontalAlign="spread">
+                            <lightning:layoutItem class="slds-text-color--weak">
+                                <span>% Down &lt; 16995:</span>
+                            </lightning:layoutItem>
+
+                            <lightning:layoutItem >
+                                <lightning:formattedNumber value="{!v.adjustedScores.jointScore.minimumDownPaymentUnder}" style="percent" minimumFractionDigits="0" maximumFractionDigits="4"/>
+                            </lightning:layoutItem>
+                        </lightning:layout>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="12" class="slds-has-divider--bottom slds-m-bottom--small" >
+                        <lightning:layout multipleRows="true" horizontalAlign="spread">
+                            <lightning:layoutItem class="slds-text-color--weak">
+                                <span>Max Monthly:</span>
+                            </lightning:layoutItem>
+
+                            <lightning:layoutItem >
+                                <span>${!v.adjustedScores.jointScore.maxMonthlyPayment}</span>
+                            </lightning:layoutItem>
+                        </lightning:layout>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="12" class="slds-has-divider--bottom slds-m-bottom--small" >
+                        <lightning:layout multipleRows="true" horizontalAlign="spread">
+                            <lightning:layoutItem class="slds-text-color--weak">
+                                <span>Max Price:</span>
+                            </lightning:layoutItem>
+
+                            <lightning:layoutItem >
+                                <span>${!v.adjustedScores.jointScore.maxPurchasePrice}</span>
+                            </lightning:layoutItem>
+                        </lightning:layout>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="12" class="slds-has-divider--bottom slds-m-bottom--small" >
+                        <lightning:layout multipleRows="true" horizontalAlign="spread">
+                            <lightning:layoutItem class="slds-text-color--weak">
+                                <span>Customer Code:</span>
+                            </lightning:layoutItem>
+
+                            <lightning:layoutItem >
+                                <span>{!v.adjustedScores.coBuyerScore.customerCode}</span>
+                            </lightning:layoutItem>
+                        </lightning:layout>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="12" class="slds-form-element slds-grid slds-grid--align-center slds-m-bottom--small">
+                        <lightning:button aura:id="jointLetter" label="Print Both" onclick="{!c.getCreditScoreLetterPrinted}"/>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="12" class="slds-form-element slds-grid slds-grid--align-center">
+                        <lightning:button aura:id="joint" label="Select Vehicle" onclick="{!c.openInventoryGrid}" disabled="{!not(v.adjustedScores.jointScore.isLetterPrinted)}"/>
+                    </lightning:layoutItem>
+                </lightning:layout>
+
+                <aura:set attribute="else">
+                    <lightning:layout horizontalAlign="center" verticalAlign="center" class="{!if(empty(v.adjustedScores.jointScore), 'slds-panel__section', 'slds-hide')}">
+                    </lightning:layout>
+                </aura:set>
+            </aura:if>
+        </lightning:layoutItem>
+    </lightning:layout>
+
+    <footer class="slds-card__footer">
+        <lightning:layout verticalAlign="center" multipleRows="true" class="slds-grid">
+            <lightning:layoutItem size="6" mediumDeviceSize="6" smallDeviceSize="12" class="slds-grid--vertical-align-start">
+                <lightning:layout class="slds-button-group">
+                    <lightning:buttonIcon title="Refresh data" variant="border" iconName="utility:refresh" alternativeText="Refresh data" onclick="{!c.reloadBox}"/>
+                    <lightning:buttonIcon title="Download initial paycall info" variant="border" iconName="utility:download" alternativeText="Download Paycall Info" onclick="{!c.downloadInitialPaycallInfoDocument}"/>
+                </lightning:layout>
+            </lightning:layoutItem>
+
+            <lightning:layoutItem size="6" mediumDeviceSize="6" smallDeviceSize="12" class="slds-grid--vertical-align-end">
+                <lightning:layout horizontalAlign="end">
+                    <aura:if isTrue="{!v.creditApp.Is_Flipped__c}">
+                        <c:popover iconName="utility:rotate" popoverClass="slds-popover slds-nubbin_bottom-right bottom-popover-position slds-text-align_left">
+                            <aura:set attribute="popoverContent">
+                                <div class="slds-popover__body">
+                                    <span>
+                                        This credit application was flipped.
+                                        <br/>
+                                        <b>Reason</b> : {!v.creditApp.Flip_Reason__c}.
+                                    </span>
+                                </div>
+                            </aura:set>
+                        </c:popover>
+                    </aura:if>
+
+                    <aura:if isTrue="{!v.creditApp.Is_Linked__c}">
+                        <c:popover iconName="utility:link" popoverClass="slds-popover slds-nubbin_bottom-right bottom-popover-position slds-text-align_left">
+                            <aura:set attribute="popoverContent">
+                                <div class="slds-popover__body">
+                                    <span>
+                                        {!v.creditApp.Link_Details__c}
+                                    </span>
+                                </div>
+                            </aura:set>
+                        </c:popover>
+                    </aura:if>
+
+                    <c:popover iconName="utility:help" popoverClass="slds-nubbin_right bottom-help-popover-position slds-text-align_left">
+                        <aura:set attribute="popoverContent">
+                            <header class="slds-popover__header">
+                                <h2 class="slds-text-heading_small">
+                                    <b>Help: </b> {!v.creditApp.Credit_Application_Status__c} Status
+                                </h2>
+                            </header>
+                            <div class="slds-popover__body">
+                                <aura:if isTrue="{!v.creditApp.Credit_Application_Status__c == 'Initial Paycall'}">
+                                    <p>
+                                        Print the credit letter for the customer(s).
+                                        <br/>
+                                        If you select Print button under Buyer section, only the buyer’s letter will print.
+                                        <br/>
+                                        If you select Print button under Joint section, both buyer and co-buyer letters will print.
+                                    </p>
+                                </aura:if>
+
+                                <aura:if isTrue="{!v.creditApp.Credit_Application_Status__c == 'Letter Printed'}">
+                                    <p>
+                                        Hit Select Vehicle button to choose a vehicle.
+                                    </p>
+                                </aura:if>
+                            </div>
+                            <footer class="slds-popover__footer">
+                                <lightning:layout multipleRows="true">
+                                    <lightning:layoutItem size="12" class="slds-m-bottom--xxx-small">
+                                        <lightning:buttonIcon iconName="utility:refresh" alternativeText="Refresh data" variant="border" size="large" />
+                                        - refresh data
+                                    </lightning:layoutItem>
+
+                                    <lightning:layoutItem size="12" class="slds-m-bottom--xxx-small">
+                                        <lightning:buttonIcon iconName="utility:download" alternativeText="Download Paycall Info" variant="border" size="large" />
+                                        - download paycall info
+                                    </lightning:layoutItem>
+
+                                    <aura:if isTrue="{!v.creditApp.Is_Flipped__c}">
+                                        <lightning:layoutItem size="12" class="slds-m-bottom--xxx-small">
+                                            <lightning:buttonIcon iconName="utility:rotate" alternativeText="Flip" variant="container" size="large"/>
+                                            - toggle flip reason
+                                        </lightning:layoutItem>
+                                    </aura:if>
+
+                                    <aura:if isTrue="{!v.creditApp.Is_Linked__c}">
+                                        <lightning:layoutItem size="12" class="slds-m-bottom--xxx-small">
+                                            <lightning:buttonIcon iconName="utility:link" alternativeText="Flip" variant="container" size="large"/>
+                                            - application is linked
+                                        </lightning:layoutItem>
+                                    </aura:if>
+
+                                    <lightning:layoutItem size="12">
+                                        <lightning:buttonIcon iconName="utility:help" alternativeText="Help" variant="container" size="large"/>
+                                        - toggle help
+                                    </lightning:layoutItem>
+                                </lightning:layout>
+                            </footer>
+                        </aura:set>
+                    </c:popover>
+                </lightning:layout>
+            </lightning:layoutItem>
+        </lightning:layout>
+    </footer>
+
+    <div aura:id="visualforce-download-frame-container" class="slds-hide"></div>
+</aura:component>

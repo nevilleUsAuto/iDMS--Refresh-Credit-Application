@@ -1,0 +1,12 @@
+.THIS .slds-popover__body .slds-dl_inline {
+    width: 10rem;
+}
+
+.THIS .bottom-popover-position {
+    bottom: 1.8rem;
+    right: -1rem;
+}
+
+.THIS .bottom-help-popover-position {
+    right: 1.7rem;
+}

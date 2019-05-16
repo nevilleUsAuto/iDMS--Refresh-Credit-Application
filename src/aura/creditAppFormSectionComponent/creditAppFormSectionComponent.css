@@ -1,0 +1,24 @@
+.THIS .slds-popover__body .slds-dl_inline {
+    width: 10rem;
+}
+
+.THIS .popover {
+    position: absolute;
+    left: 39%;
+    bottom: 64%;
+}
+
+.THIS .popover-salary {
+    position: absolute;
+    left: 32%;
+    bottom: 64%;
+}
+
+.THIS .bottom-popover-position {
+    bottom: 1.8rem;
+    right: -1rem;
+}
+
+.THIS .bottom-help-popover-position {
+    right: 1.7rem;
+}

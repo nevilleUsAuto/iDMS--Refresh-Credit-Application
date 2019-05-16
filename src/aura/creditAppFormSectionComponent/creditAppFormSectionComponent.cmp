@@ -1,0 +1,1822 @@
+<aura:component controller="CreditAppEditComponentController"
+                implements="flexipage:availableForRecordHome,flexipage:availableForAllPageTypes,force:hasRecordId">
+    <aura:attribute name="isInitComplete" type="Boolean" default="false" />
+
+	<aura:attribute name="currentSectionName" type="String" default="personal"/>
+	<aura:attribute name="isCoBuyerExist" type="Boolean" default="false"/>
+	<aura:attribute name="addCobuyerModal" type="Boolean" default="false"/>
+	<aura:attribute name="coBuyerSocialSecurityNumber" type="String" access="private"/>
+	<aura:attribute name="creditApplication" type="Credit_Application__c" default="{Repeat_Customer__c : '', Repeat_Reason__c : '', Previous_Account_Number__c : '',
+	 														Co_App_Repeat_Customer__c : '', Co_App_Repeat_Reason__c : '', Car_Reposessed__c : '',
+	 														 Credit_Application_Comment__c : '', Currently_In_Bankruptcy__c : '',
+																Ever_Filed_Bankruptcy_or_Chapter_13__c : '', Co_App_Available_Down_Payment__c : '',
+																Co_App_Car_Repossessed__c : '', Co_App_Currently_In_Bankruptcy__c : '', Co_App_Gone_Through_Bankruptcy__c : ''}"/>
+	<aura:attribute name="buyer" type="Contact"/>
+	<aura:attribute name="coBuyer" type="Contact"/>
+	<aura:attribute name="employment" type="Employment__c" default="{Name : '', Employer_Street__c : '', Employer__State__c : '',
+	 														Employer_City__c : '', Employer_Zip__c : '', Occupation_Or_Rank__c : '', Salary_Type__c : '',
+	 														 Address_Duration_Years__c : '', Address_Duration_Months__c : '',
+	 														  Other_Income__c : '', Employer_Phone__c : ''}"/>
+	<aura:attribute name="previousEmployment" type="Employment__c" default="{Name : '', Employer_Street__c : '', Employer__State__c : '',
+	 														Employer_City__c : '', Employer_Zip__c : '', Occupation_Or_Rank__c : '', Salary_Type__c : '',
+	 														 Address_Duration_Years__c : '', Address_Duration_Months__c : '',
+	 														  Other_Income__c : '', Employer_Phone__c : ''}"/>
+	<aura:attribute name="coAppEmployment" type="Employment__c" default="{Name : '', Employer_Street__c : '', Employer__State__c : '',
+	 														Employer_City__c : '', Employer_Zip__c : '', Occupation_Or_Rank__c : '', Salary_Type__c : '',
+	 														 Address_Duration_Years__c : '', Address_Duration_Months__c : '',
+	 														  Other_Income__c : '', Employer_Phone__c : ''}"/>
+	<aura:attribute name="previousCoAppEmployment" type="Employment__c" default="{Name : '', Employer_Street__c : '', Employer__State__c : '',
+	 														Employer_City__c : '', Employer_Zip__c : '', Occupation_Or_Rank__c : '', Salary_Type__c : '',
+	 														 Address_Duration_Years__c : '', Address_Duration_Months__c : '',
+	 														  Other_Income__c : '', Employer_Phone__c : ''}"/>
+	<aura:attribute name="residence" type="Residence__c" default="{'Housing_Type__c' : '', 'House_Number__c' : '', 'Address_Street__c' : '',
+															'Address_Street_Type__c' : '', 'Address_City__c' : '', 'Address_State__c' : '', 'Address_Zip__c' : '',
+	 														'Address_Duration_Years__c' : '', 'Address_Duration_Months__c' : '', 'Home_Payment__c' : ''}"/>
+	<aura:attribute name="previousResidence" type="Residence__c" default="{Housing_Type__c : '', House_Number__c : '', Address_Street__c : '',
+	 														Address_Street_type__c : '', Address_City__c : '', Address_State__c : '', Address_Zip__c : '',
+	 														 Address_Duration_Years__c : '', Address_Duration_Months__c : '', Home_Payment__c : '', 'Is_Current_Residence__c' : false,
+	 														'Is_Primary_Buyer__c' : true}"/>
+	<aura:attribute name="coAppResidence" type="Residence__c" default="{Housing_Type__c : '', House_Number__c : '', Address_Street__c : '',
+	 														Address_Street_type__c : '', Address_City__c : '', Address_State__c : '', Address_Zip__c : '',
+	 														 Address_Duration_Years__c : '', Address_Duration_Months__c : '', Home_Payment__c : ''}"/>
+	<aura:attribute name="previousCoAppResidence" type="Residence__c" default="{Housing_Type__c : '', House_Number__c : '', Address_Street__c : '',
+	 														Address_Street_type__c : '', Address_City__c : '', Address_State__c : '', Address_Zip__c : '',
+	 														 Address_Duration_Years__c : '', Address_Duration_Months__c : '', Home_Payment__c : ''}"/>
+	<aura:attribute name="referencesList" type="Contact[]"/>
+	<aura:attribute name="removedReferences" type="Contact[]"/>
+	<aura:attribute name="searchResult" type="Contact"/>
+	<aura:attribute name="picklists" type="Map" access="public"/>
+
+	<aura:attribute name="previousBuyerAddressDisabled" type="Boolean" default="false"/>
+	<aura:attribute name="previousCoBuyerAddressDisabled" type="Boolean" default="false"/>
+	<aura:attribute name="previousBuyerEmployerDisabled" type="Boolean" default="false"/>
+	<aura:attribute name="previousCoBuyerEmployerDisabled" type="Boolean" default="false"/>
+	<aura:attribute name="buyerMilitaryDisabled" type="Boolean" default="false"/>
+	<aura:attribute name="coBuyerMilitaryDisabled" type="Boolean" default="false"/>
+
+	<aura:attribute name="saveButtonClickedMode" type="Boolean" default="false"/>
+	<aura:attribute name="finishEditModal" type="Boolean" default="false"/>
+	<aura:attribute name="isFormValid" type="Boolean" default="false"/>
+	<aura:attribute name="deleteCoBuyerModal" type="Boolean" default="false"/>
+	<aura:attribute name="menuItems" type="String[]" default="['personal','current-housing','previous-housing','current-employment',
+	                                                            'previous-employment', 'references',
+																'credit-history','military-experience','repeat-customer','optional-message']"/>
+	<aura:attribute name="isInit" type="Boolean" default="true"/>
+	<aura:attribute name="errorsCanBeAdded" type="Boolean" default="false"/>
+	<aura:attribute name="menuIndex" type="Integer" default="0"/>
+
+	<aura:attribute name="readyToSubmitSections" type="Map" default="{'personal' : false,'current-housing' : false, 'previous-housing' : false, 'current-employment' : false,
+                                                                           'previous-employment' : false, 'references' : false, 'credit-history' : false,
+                                                                            'military-experience' : true, 'repeat-customer' : false, 'optional-message' : true}"/>
+	<aura:attribute name="sectionLables" type="Map" default="{'personal' : 'Personal Information', 'current-housing' : 'Current Housing', 'previous-housing' : 'Previous Housing', 'current-employment' : 'Current Employment',
+                                                                           'previous-employment' : 'Previous Employment', 'references' : 'References', 'credit-history' : 'Credit History',
+                                                                            'military-experience' : 'Military Experience', 'repeat-customer' : 'Repeat Customer', 'optional-message' : 'Optional Message'}"/>
+	<aura:attribute name="messageWhenNotReadyToSubmit" type="String[]" default=""/>
+	<aura:attribute name="appBoxToBeReloaded" type="Boolean" default="false"/>
+    <aura:attribute name="creditAppCanBeEdited" type="Boolean" default="false"/>
+
+    <aura:attribute name="invalidFields" type="CreditAppEditComponentController.InvalidFieldsWrapper" />
+
+	<ltng:require scripts="{!$Resource.commonHelper}" afterScriptsLoaded="{!c.init}"/>
+
+    <!-- <aura:handler name="reloadForm" event="c:reloadForm" action="{!c.init}"/> -->
+
+    <aura:handler name="validate" event="c:validated" action="{!c.handleCustomerChange}"/>
+
+    <aura:handler name="change" value="{!v.creditApplication}" action="{!c.handleValidation}"/>
+    <aura:handler name="change" value="{!v.buyer}" action="{!c.handleValidation}"/>
+    <aura:handler name="change" value="{!v.coBuyer}" action="{!c.handleValidation}"/>
+    <aura:handler name="change" value="{!v.employment}" action="{!c.handlePreviousBuyerEmployerEnabling}"/>
+    <aura:handler name="change" value="{!v.previousEmployment}" action="{!c.handleValidation}"/>
+    <aura:handler name="change" value="{!v.coAppEmployment}" action="{!c.handlePreviousCoBuyerEmployerEnabling}"/>
+    <aura:handler name="change" value="{!v.previousCoAppEmployment}" action="{!c.handleValidation}"/>
+    <aura:handler name="change" value="{!v.residence}" action="{!c.handlePreviousBuyerAddressEnabling}"/>
+    <aura:handler name="change" value="{!v.previousResidence}" action="{!c.handleValidation}"/>
+    <aura:handler name="change" value="{!v.coAppResidence}" action="{!c.handlePreviousCoBuyerAddressEnabling}"/>
+    <aura:handler name="change" value="{!v.previousCoAppResidence}" action="{!c.handleValidation}"/>
+    <aura:handler name="change" value="{!v.referencesList}" action="{!c.handleReferencesChange}"/>
+
+	<article class="slds-card">
+		<div class="slds-card__header slds-grid">
+			<header class="slds-media slds-media_center slds-has-flexi-truncate">
+				<div class="slds-media__figure">
+                    <span class="slds-icon_container slds-icon-standard-account" title="Credit Application Edit">
+                        <lightning:icon size="medium" iconName="standard:service_appointment"/>
+                        <span class="slds-assistive-text">Credit Application Edit</span>
+                    </span>
+				</div>
+				<div class="slds-media__body">
+					<h2 class="slds-card__header-title">
+						<div class="slds-card__header-link slds-truncate">
+							<span><h1>Credit Application Edit</h1></span>
+						</div>
+					</h2>
+					<h3>
+
+					</h3>
+				</div>
+				<div class="slds-no-flex">
+					<lightning:layout multipleRows="true">
+						<lightning:layout multipleRows="true" class="slds-p-top--xx-small">
+							<span class="slds-show slds-text-heading_small slds-truncate slds-p-right--large slds-m-left--large"
+							      title="{!v.creditApplication.Credit_Application_Status__c}">
+                                Status: {!v.creditApplication.Credit_Application_Status__c}
+                            </span>
+						</lightning:layout>
+
+						<aura:if isTrue="{!v.creditAppCanBeEdited}">
+                            <div aura:id="show-menu" class="slds-dropdown-trigger slds-dropdown-trigger_click slds-p-horizontal--xx-small">
+                                <lightning:buttonMenu aura:id="menu" onselect="{!c.navigateToComponentSection}" alternativeText="Show menu">
+                                    <lightning:menuItem value="personal" label="Personal"/>
+                                    <lightning:menuItem value="current-housing" label="Current Housing"
+                                                        aura:id="current-housing-information-err"/>
+                                    <lightning:menuItem value="previous-housing" label="Previous Housing"
+                                                        disabled="{!and(v.previousBuyerAddressDisabled, v.previousCoBuyerAddressDisabled)}"
+                                                        aura:id="previous-housing-information-err"/>
+                                    <lightning:menuItem value="current-employment" label="Current Employment"
+                                                        aura:id="employment-information-err"/>
+                                    <lightning:menuItem value="previous-employment"
+                                                        disabled="{!and(v.previousBuyerEmployerDisabled, v.previousCoBuyerEmployerDisabled)}"
+                                                        label="Previous Employment"/>
+                                    <lightning:menuItem value="references" label="References"/>
+                                    <lightning:menuItem value="credit-history" label="Credit History" disabled="false"
+                                                        aura:id="credit-history-err"/>
+                                    <lightning:menuItem value="military-experience" label="Military Experience"
+                                                        aura:id="military-expirience-err"/>
+                                    <lightning:menuItem value="repeat-customer" label="Repeat Customer" aura:id="repeat-customer-err"/>
+                                    <lightning:menuItem value="optional-message" label="Optional Message"/>
+                                </lightning:buttonMenu>
+                            </div>
+
+                            <button class="slds-button slds-button_neutral" disabled="{!v.menuIndex == 0}" onclick="{!c.openPreviousSection}">
+                                Previous
+                            </button>
+                            <button class="slds-button slds-button_neutral" disabled="{!v.menuIndex == v.menuItems.length -1}"
+                                    onclick="{!c.openNextSection}">Next
+                            </button>
+                            <lightning:button variant="{!if(v.isCoBuyerExist, 'destructive', 'success')}"
+                                              label="{!if(v.isCoBuyerExist, 'Remove Co-Buyer', 'Add Co-Buyer')}"
+                                              onclick="{!c.addCoBuyer}"/>
+                            <lightning:button aura:id="save-creditapp-button" variant="neutral" label="Save" iconName="utility:check"
+                                              onclick="{!c.tryToSaveCreditApplication1}"/>
+                        </aura:if>
+					</lightning:layout>
+				</div>
+			</header>
+		</div>
+
+
+	        <lightning:layout>
+		        <aura:if isTrue="{!v.creditAppCanBeEdited}">
+		            <lightning:layoutItem size="8">
+                        <aura:if isTrue="{!v.currentSectionName == 'personal'}">
+                            <div class="slds-card__body slds-card__body_inner">
+                                <article class="slds-card slds-card_boundary">
+                                    <div class="slds-card__header slds-grid">
+                                        <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                                            <div class="slds-media__figure">
+                                                <span class="slds-icon_container slds-icon-standard-account" title="Personal Information">
+                                                  <lightning:icon size="medium" iconName="standard:person_account"/>
+                                                  <span class="slds-assistive-text">Personal Information</span>
+                                                </span>
+                                            </div>
+                                            <div class="slds-media__body">
+                                                <h2 class="slds-card__header-title">
+                                                    <a href="javascript:void(0);" class="slds-card__header-link slds-truncate"
+                                                       title="Card Header">
+                                                        <span>Personal Information</span>
+                                                    </a>
+                                                </h2>
+                                            </div>
+                                        </header>
+                                    </div>
+                                    <div class="slds-card__body slds-card__body_inner">
+                                        <lightning:layout multipleRows="true">
+                                            <lightning:layoutItem size="12">
+                                                <div class="slds-tabs_default">
+                                                    <ul class="slds-tabs_default__nav" role="tablist">
+                                                        <li aura:id="tab-buyer" class="slds-tabs_default__item slds-is-active"
+                                                            title="Buyer Info"
+                                                            role="presentation">
+                                                            <a id="buyer-ref-section" class="slds-tabs_default__link"
+                                                               onclick="{!c.sectionBuyerChange}" role="tab" tabindex="0"
+                                                               aria-selected="false"
+                                                               aria-controls="tab-default-1">
+                                                                Buyer Info
+                                                            </a>
+                                                        </li>
+                                                        <aura:if isTrue="{!v.isCoBuyerExist}">
+                                                            <li aura:id="tab-co-buyer" class="slds-tabs_default__item"
+                                                                title="Co-Buyer Info"
+                                                                role="presentation">
+                                                                <a id="co-buyer-ref-section" class="slds-tabs_default__link"
+                                                                   onclick="{!c.sectionBuyerChange}" role="tab" tabindex="-1"
+                                                                   aria-selected="true"
+                                                                   aria-controls="tab-default-2">
+                                                                    Co-Buyer Info
+                                                                </a>
+                                                            </li>
+                                                        </aura:if>
+
+                                                    </ul>
+
+                                                    <div aura:id="section-buyer" class="slds-tabs_default__content slds-show"
+                                                         role="tabpanel"
+                                                         aria-labelledby="tab-default-1__item">
+                                                        <lightning:layout horizontalAlign="center" multipleRows="true">
+                                                            <lightning:layoutItem size="12" padding="horizontal-large">
+                                                                <c:customerCard aura:id="customer-card" customer="{!v.buyer}"
+                                                                                picklists="{!v.picklists}"
+                                                                                isTwoColumns="true"/>
+                                                            </lightning:layoutItem>
+                                                            *Valid phone format is '123-456-7890'
+                                                        </lightning:layout>
+                                                    </div>
+
+                                                    <div aura:id="section-co-buyer" class="slds-tabs_default__content slds-hide"
+                                                         role="tabpanel"
+                                                         aria-labelledby="tab-default-2__item">
+                                                        <lightning:layout horizontalAlign="center" multipleRows="true">
+                                                            <lightning:layoutItem size="12" padding="horizontal-large">
+                                                                <c:customerCard aura:id="customer-card" customer="{!v.coBuyer}"
+                                                                                picklists="{!v.picklists}"
+                                                                                isTwoColumns="true"/>
+                                                            </lightning:layoutItem>
+                                                            *Valid phone format is '123-456-7890'
+                                                        </lightning:layout>
+                                                    </div>
+
+                                                </div>
+                                            </lightning:layoutItem>
+                                        </lightning:layout>
+                                    </div>
+
+                                    <footer class="slds-card__footer">
+                                    </footer>
+                                </article>
+                            </div>
+                        </aura:if>
+
+                        <aura:if isTrue="{!v.currentSectionName == 'current-housing'}">
+                            <div class="slds-card__body slds-card__body_inner">
+                                <article class="slds-card slds-card_boundary">
+                                    <div class="slds-card__header slds-grid">
+                                        <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                                            <div class="slds-media__figure">
+                                                <span class="slds-icon_container slds-icon-standard-account" title="Personal Information">
+                                                  <lightning:icon size="medium" iconName="standard:person_account"/>
+                                                  <span class="slds-assistive-text">Current Housing</span>
+                                                </span>
+                                            </div>
+                                            <div class="slds-media__body">
+                                                <h2 class="slds-card__header-title">
+                                                    <a href="javascript:void(0);" class="slds-card__header-link slds-truncate"
+                                                       title="Card Header">
+                                                        <span>Current Housing</span>
+                                                    </a>
+                                                </h2>
+                                            </div>
+                                        </header>
+                                    </div>
+                                    <div class="slds-card__body slds-card__body_inner">
+                                        <lightning:layout multipleRows="true">
+                                            <lightning:layoutItem size="12">
+                                                <div class="slds-tabs_default">
+                                                    <ul class="slds-tabs_default__nav" role="tablist">
+                                                        <li aura:id="tab-buyer" class="slds-tabs_default__item slds-is-active"
+                                                            title="Buyer Info"
+                                                            role="presentation">
+                                                            <a id="buyer-ref-section" class="slds-tabs_default__link"
+                                                               onclick="{!c.sectionBuyerChange}" role="tab" tabindex="0"
+                                                               aria-selected="false"
+                                                               aria-controls="tab-default-1">
+                                                                Buyer Info
+                                                            </a>
+                                                        </li>
+                                                        <aura:if isTrue="{!v.isCoBuyerExist}">
+                                                            <li aura:id="tab-co-buyer" class="slds-tabs_default__item"
+                                                                title="Co-Buyer Info"
+                                                                role="presentation">
+                                                                <a id="co-buyer-ref-section" class="slds-tabs_default__link"
+                                                                   onclick="{!c.sectionBuyerChange}" role="tab" tabindex="-1"
+                                                                   aria-selected="true"
+                                                                   aria-controls="tab-default-2">
+                                                                    Co-Buyer Info
+                                                                </a>
+                                                            </li>
+                                                        </aura:if>
+                                                    </ul>
+                                                    <div aura:id="section-buyer" class="slds-tabs_default__content slds-show"
+                                                         role="tabpanel"
+                                                         aria-labelledby="tab-default-1__item">
+                                                        <lightning:layout horizontalAlign="center" multipleRows="true">
+                                                            <lightning:layoutItem size="6" padding="horizontal-large">
+                                                                <c:selectlist name="Housing_Type__c"
+                                                                              aura:id="residence-housing-type"
+                                                                              label="Housing Type"
+                                                                              sobject="Residence__c"
+                                                                              value="{!v.residence.Housing_Type__c}"
+                                                                              required="true"
+                                                                />
+                                                                <lightning:input label="Current House Number" maxlength="10"
+                                                                                 name="currentHouseNumber"
+                                                                                 pattern="(.*)"
+                                                                                 required="true"
+                                                                                 value="{!v.residence.House_Number__c}"/>
+                                                                <lightning:input label="Current Street" name="currentStreet"
+                                                                                 required="true"
+                                                                                 value="{!v.residence.Address_Street__c}"/>
+                                                                <c:selectlist name="Address_Street_Type__c"
+                                                                              aura:id="residence-street-type"
+                                                                              label="Current Street Type"
+                                                                              sobject="Residence__c"
+                                                                              value="{!v.residence.Address_Street_Type__c}"
+                                                                              required="true"
+                                                                />
+                                                                <lightning:input label="Current Address City" name="currentAddressCity"
+                                                                                 required="true"
+                                                                                 value="{!v.residence.Address_City__c}"/>
+                                                            </lightning:layoutItem>
+                                                            <lightning:layoutItem size="6" padding="horizontal-large">
+                                                                <c:selectlist name="Address_State__c"
+                                                                              aura:id="residence-state"
+                                                                              label="Current State"
+                                                                              sobject="Residence__c"
+                                                                              value="{!v.residence.Address_State__c}"
+                                                                              required="true"
+                                                                />
+                                                                <lightning:input label="Current Address Zip" name="currentAddressZip"
+                                                                                 required="true"
+                                                                                 pattern="[0-9]{5}"
+                                                                                 messageWhenPatternMismatch="Valid ZIP format is '45-789'"
+                                                                                 maxlength="5"
+                                                                                 value="{!v.residence.Address_Zip__c}"/>
+                                                                <c:selectlist name="Address_Duration_Years__c"
+                                                                              aura:id="residence-address-duration-years"
+                                                                              label="Current Address Duration (Years)"
+                                                                              sobject="Residence__c"
+                                                                              noneExist="false"
+                                                                              default="0"
+                                                                              value="{!v.residence.Address_Duration_Years__c}"
+                                                                              required="true"
+                                                                />
+                                                                <c:selectlist name="Address_Duration_Months__c"
+                                                                              aura:id="residence-address-duration-months"
+                                                                              label="Current Address Duration (Months)"
+                                                                              sobject="Residence__c"
+                                                                              noneExist="false"
+                                                                              default="0"
+                                                                              value="{!v.residence.Address_Duration_Months__c}"
+                                                                />
+                                                                <lightning:input label="Home Payment" name="homePayment"
+                                                                                 required="true"
+                                                                                 type="number"
+                                                                                 formatter="currency"
+                                                                                 min="0.00"
+                                                                                 messageWhenRangeUnderflow="Home Payment Amount cannot be less than zero ($0.00)"
+                                                                                 value="{!v.residence.Home_Payment__c}"/> <!--  pattern="(.*)" -->
+                                                            </lightning:layoutItem>
+                                                        </lightning:layout>
+                                                    </div>
+
+                                                    <div aura:id="section-co-buyer" class="slds-tabs_default__content slds-hide"
+                                                         role="tabpanel"
+                                                         aria-labelledby="tab-default-2__item">
+                                                        <lightning:layout horizontalAlign="center" multipleRows="true">
+                                                            <lightning:layoutItem size="6" padding="horizontal-large">
+                                                                <c:selectlist name="Housing_Type__c"
+                                                                              aura:id="residence-housing-type"
+                                                                              label="Housing Type"
+                                                                              sobject="Residence__c"
+                                                                              value="{!v.coAppResidence.Housing_Type__c}"
+                                                                              required="true"
+                                                                />
+                                                                <lightning:input label="Current House Number" name="currentHouseNumber"
+                                                                                 pattern="(.*)"
+                                                                                 maxlength="10"
+                                                                                 required="true"
+                                                                                 value="{!v.coAppResidence.House_Number__c}"/>
+                                                                <lightning:input label="Current Street" name="currentStreet"
+                                                                                 required="true"
+                                                                                 value="{!v.coAppResidence.Address_Street__c}"/>
+                                                                <c:selectlist name="Address_Street_Type__c"
+                                                                              aura:id="residence-street-type"
+                                                                              label="Current Street Type"
+                                                                              sobject="Residence__c"
+                                                                              value="{!v.coAppResidence.Address_Street_Type__c}"
+                                                                              required="true"
+                                                                />
+                                                                <lightning:input label="Current Address City" name="currentAddressCity"
+                                                                                 required="true"
+                                                                                 value="{!v.coAppResidence.Address_City__c}"/>
+                                                            </lightning:layoutItem>
+                                                            <lightning:layoutItem size="6" padding="horizontal-large">
+                                                                <c:selectlist name="Address_State__c"
+                                                                              aura:id="residence-state"
+                                                                              label="Current State"
+                                                                              sobject="Residence__c"
+                                                                              value="{!v.coAppResidence.Address_State__c}"
+                                                                              required="true"
+                                                                />
+                                                                <lightning:input label="Current Address Zip" name="currentAddressZip"
+                                                                                 required="true"
+                                                                                 pattern="[0-9]{5}"
+                                                                                 messageWhenPatternMismatch="Valid ZIP format is '45-789'"
+                                                                                 maxlength="5"
+                                                                                 value="{!v.coAppResidence.Address_Zip__c}"/>
+                                                                <c:selectlist name="Address_Duration_Years__c"
+                                                                              aura:id="residence-address-duration-years"
+                                                                              label="Current Address Duration (Years)"
+                                                                              noneExist="false"
+                                                                              default="0"
+                                                                              sobject="Residence__c"
+                                                                              value="{!v.coAppResidence.Address_Duration_Years__c}"
+                                                                              required="true"
+                                                                />
+                                                                <c:selectlist name="Address_Duration_Months__c"
+                                                                              aura:id="residence-address-duration-months"
+                                                                              label="Current Address Duration (Months)"
+                                                                              noneExist="false"
+                                                                              sobject="Residence__c"
+                                                                              value="{!v.coAppResidence.Address_Duration_Months__c}"
+                                                                              required="true"
+                                                                              default="0"
+                                                                />
+                                                                <lightning:input label="Home Payment" name="homePayment"
+                                                                                 required="true"
+                                                                                 type="number"
+                                                                                 formatter="currency"
+                                                                                 min="0.00"
+                                                                                 messageWhenRangeUnderflow="Co-buyer's Home Payment Amount cannot be less than zero ($0.00)"
+                                                                                 value="{!v.coAppResidence.Home_Payment__c}"/>
+                                                            </lightning:layoutItem>
+                                                        </lightning:layout>
+                                                    </div>
+                                                </div>
+                                            </lightning:layoutItem>
+                                        </lightning:layout>
+                                    </div>
+                                </article>
+                            </div>
+                        </aura:if>
+
+                        <aura:if isTrue="{!v.currentSectionName == 'previous-housing'}">
+                            <div class="slds-card__body slds-card__body_inner">
+                                <article class="slds-card slds-card_boundary">
+                                    <div class="slds-card__header slds-grid">
+                                        <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                                            <div class="slds-media__figure">
+                                                <span class="slds-icon_container slds-icon-standard-account" title="Personal Information">
+                                                  <lightning:icon size="medium" iconName="standard:person_account"/>
+                                                  <span class="slds-assistive-text">Previous Housing</span>
+                                                </span>
+                                            </div>
+                                            <div class="slds-media__body">
+                                                <h2 class="slds-card__header-title">
+                                                    <a href="javascript:void(0);" class="slds-card__header-link slds-truncate"
+                                                       title="Card Header">
+                                                        <span>Previous Housing</span>
+                                                    </a>
+                                                </h2>
+                                            </div>
+                                        </header>
+                                    </div>
+                                    <div class="slds-card__body slds-card__body_inner">
+                                        <lightning:layout multipleRows="true">
+                                            <lightning:layoutItem size="12">
+                                                <div class="slds-tabs_default">
+                                                    <ul class="slds-tabs_default__nav" role="tablist">
+                                                        <aura:if isTrue="{!!v.previousBuyerAddressDisabled}">
+                                                            <li aura:id="tab-buyer" class="slds-tabs_default__item slds-is-active"
+                                                                title="Buyer Info"
+                                                                role="presentation">
+                                                                <a id="buyer-ref-section" class="slds-tabs_default__link"
+                                                                   onclick="{!c.sectionBuyerChange}" role="tab" tabindex="0"
+                                                                   aria-selected="false"
+                                                                   aria-controls="tab-default-1">
+                                                                    Buyer Info
+                                                                </a>
+                                                            </li>
+                                                        </aura:if>
+                                                        <aura:if isTrue="{!and(v.isCoBuyerExist, !v.previousCoBuyerAddressDisabled)}">
+                                                            <li aura:id="tab-co-buyer" class="slds-tabs_default__item"
+                                                                title="Co-Buyer Info"
+                                                                role="presentation">
+                                                                <a id="co-buyer-ref-section" class="slds-tabs_default__link"
+                                                                   onclick="{!c.sectionBuyerChange}" role="tab" tabindex="-1"
+                                                                   aria-selected="true"
+                                                                   aria-controls="tab-default-2">
+                                                                    Co-Buyer Info
+                                                                </a>
+                                                            </li>
+                                                        </aura:if>
+                                                    </ul>
+
+                                                    <aura:if isTrue="{!!v.previousBuyerAddressDisabled}">
+                                                    <div aura:id="section-buyer" class="slds-tabs_default__content" role="tabpanel"
+                                                         aria-labelledby="tab-default-1__item">
+                                                        <lightning:layout horizontalAlign="center" multipleRows="true">
+                                                            <lightning:layoutItem size="6" padding="horizontal-large">
+                                                                <c:selectlist name="Housing_Type__c"
+                                                                              aura:id="buyer-previous-housing"
+                                                                              label="Housing Type"
+                                                                              sobject="Residence__c"
+                                                                              required="true"
+                                                                              value="{!v.previousResidence.Housing_Type__c}"
+                                                                />
+                                                                <lightning:input label="Previous House Number"
+                                                                                 aura:id="buyer-previous-housing"
+                                                                                 name="previousHouseNumber" maxlength="10"
+                                                                                 pattern="(.*)"
+                                                                                 required="true"
+                                                                                 value="{!v.previousResidence.House_Number__c}"/>
+                                                                <lightning:input label="Previous Street"
+                                                                                 name="previousStreet"
+                                                                                 required="true"
+                                                                                 aura:id="buyer-previous-housing"
+                                                                                 value="{!v.previousResidence.Address_Street__c}"/>
+                                                                <c:selectlist name="Address_Street_Type__c"
+                                                                              aura:id="buyer-previous-housing"
+                                                                              label="Previous Street Type"
+                                                                              required="true"
+                                                                              sobject="Residence__c"
+                                                                              value="{!v.previousResidence.Address_Street_Type__c}"
+                                                                />
+                                                                <lightning:input label="Previous Address City"
+                                                                                 name="previousAddressCity"
+                                                                                 required="true"
+                                                                                 aura:id="buyer-previous-housing"
+                                                                                 value="{!v.previousResidence.Address_City__c}"/>
+                                                            </lightning:layoutItem>
+                                                            <lightning:layoutItem size="6" padding="horizontal-large">
+                                                                <c:selectlist name="Address_State__c"
+                                                                              aura:id="buyer-previous-housing"
+                                                                              label="Previous State"
+                                                                              required="true"
+                                                                              sobject="Residence__c"
+                                                                              value="{!v.previousResidence.Address_State__c}"
+                                                                />
+                                                                <lightning:input label="Previous Address Zip"
+                                                                                 name="previosAddressZip"
+                                                                                 pattern="[0-9]{5}"
+                                                                                 required="true"
+                                                                                 messageWhenPatternMismatch="Valid ZIP format is '45-789'"
+                                                                                 maxlength="5"
+                                                                                 aura:id="buyer-previous-housing"
+                                                                                 value="{!v.previousResidence.Address_Zip__c}"/>
+                                                                <c:selectlist name="Address_Duration_Years__c"
+                                                                              aura:id="buyer-previous-housing"
+                                                                              label="Previous Address Duration (Years)"
+                                                                              sobject="Residence__c"
+                                                                              required="true"
+                                                                              noneExist="false"
+                                                                              default="0"
+                                                                              value="{!v.previousResidence.Address_Duration_Years__c}"
+                                                                />
+                                                                <c:selectlist name="Address_Duration_Months__c"
+                                                                              aura:id="buyer-previous-housing"
+                                                                              label="Previous Address Duration (Months)"
+                                                                              sobject="Residence__c"
+                                                                              required="true"
+                                                                              noneExist="false"
+                                                                              default="0"
+                                                                              value="{!v.previousResidence.Address_Duration_Months__c}"
+                                                                />
+                                                                <lightning:input label="Previous Home Payment"
+                                                                                 name="homePayment"
+                                                                                 type="number"
+                                                                                 formatter="currency"
+                                                                                 min="0.00"
+                                                                                 messageWhenRangeUnderflow="Previous Home Payment Amount cannot be less than zero ($0.00)"
+                                                                                 required="true"
+                                                                                 aura:id="buyer-previous-housing"
+                                                                                 value="{!v.previousResidence.Home_Payment__c}"/>
+                                                            </lightning:layoutItem>
+                                                        </lightning:layout>
+                                                    </div>
+                                                        <aura:set attribute="else">
+                                                            *Just click Co-Buyer
+                                                        </aura:set>
+                                                    </aura:if>
+                                                    <div aura:id="section-co-buyer" class="slds-tabs_default__content slds-hide" role="tabpanel"
+                                                         aria-labelledby="tab-default-2__item">
+                                                        <lightning:layout horizontalAlign="center" multipleRows="true">
+                                                            <lightning:layoutItem size="6" padding="horizontal-large">
+                                                                <c:selectlist name="Housing_Type__c"
+                                                                              aura:id="cobuyer-previous-housing"
+                                                                              label="Housing Type"
+                                                                              sobject="Residence__c"
+                                                                              value="{!v.previousCoAppResidence.Housing_Type__c}"
+                                                                              required="true"
+                                                                />
+                                                                <lightning:input label="Previous House Number"
+                                                                                 name="prevHouseNumber" maxlength="10"
+                                                                                 aura:id="cobuyer-previous-housing"
+                                                                                 pattern="(.*)"
+                                                                                 value="{!v.previousCoAppResidence.House_Number__c}"
+                                                                                 required="true"/>
+                                                                <lightning:input label="Previous Street"
+                                                                                 name="currentStreet"
+                                                                                 aura:id="cobuyer-previous-housing"
+                                                                                 value="{!v.previousCoAppResidence.Address_Street__c}"
+                                                                                 required="true"/>
+                                                                <c:selectlist name="Address_Street_Type__c"
+                                                                              aura:id="cobuyer-previous-housing"
+                                                                              label="Previous Street Type"
+                                                                              sobject="Residence__c"
+                                                                              required="true"
+                                                                              value="{!v.previousCoAppResidence.Address_Street_Type__c}"
+                                                                />
+                                                                <lightning:input label="Previous Address City"
+                                                                                 name="prevAddressCity"
+                                                                                 aura:id="cobuyer-previous-housing"
+                                                                                 required="true"
+                                                                                 value="{!v.previousCoAppResidence.Address_City__c}"/>
+                                                            </lightning:layoutItem>
+                                                            <lightning:layoutItem size="6" padding="horizontal-large">
+                                                                <c:selectlist name="Address_State__c"
+                                                                              aura:id="cobuyer-previous-housing"
+                                                                              label="Previous State"
+                                                                              sobject="Residence__c"
+                                                                              required="true"
+                                                                              value="{!v.previousCoAppResidence.Address_State__c}"
+                                                                />
+                                                                <lightning:input label="Previous Address Zip"
+                                                                                 name="prevAddressZip"
+                                                                                 pattern="[0-9]{5}"
+                                                                                 messageWhenPatternMismatch="Valid ZIP format is '45-789'"
+                                                                                 maxlength="5"
+                                                                                 required="true"
+                                                                                 aura:id="cobuyer-previous-housing"
+                                                                                 value="{!v.previousCoAppResidence.Address_Zip__c}"/>
+                                                                <c:selectlist name="Address_Duration_Years__c"
+                                                                              aura:id="cobuyer-previous-housing"
+                                                                              label="Previous Address Duration (Years)"
+                                                                              sobject="Residence__c"
+                                                                              noneExist="false"
+                                                                              default="0"
+                                                                              required="true"
+                                                                              value="{!v.previousCoAppResidence.Address_Duration_Years__c}"
+                                                                />
+                                                                <c:selectlist name="Address_Duration_Months__c"
+                                                                              aura:id="cobuyer-previous-housing"
+                                                                              label="Previous Address Duration (Months)"
+                                                                              sobject="Residence__c"
+                                                                              noneExist="false"
+                                                                              default="0"
+                                                                              required="true"
+                                                                              value="{!v.previousCoAppResidence.Address_Duration_Months__c}"
+                                                                />
+                                                                <lightning:input label="Previous Home Payment"
+                                                                                 name="homePayment"
+                                                                                 type="number"
+                                                                                 formatter="currency"
+                                                                                 min="0.00"
+                                                                                 messageWhenRangeUnderflow="Co-buyer's Previous Home Payment Amount cannot be less than zero ($0.00)"
+                                                                                 required="true"
+                                                                                 aura:id="cobuyer-previous-housing"
+                                                                                 value="{!v.previousCoAppResidence.Home_Payment__c}"/>
+                                                            </lightning:layoutItem>
+                                                        </lightning:layout>
+                                                    </div>
+                                                </div>
+                                            </lightning:layoutItem>
+                                        </lightning:layout>
+                                    </div>
+                                    <footer class="slds-card__footer">
+                                        <!-- <a class="slds-card__footer-action" href="javascript:void(0);">View All
+                                             <span class="slds-assistive-text">Accounts</span>
+                                         </a>-->
+                                    </footer>
+                                </article>
+                            </div>
+                        </aura:if>
+
+                        <aura:if isTrue="{!v.currentSectionName == 'current-employment'}">
+                            <div class="slds-card__body slds-card__body_inner">
+                                <article class="slds-card slds-card_boundary">
+                                    <div class="slds-card__header slds-grid">
+                                        <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                                            <div class="slds-media__figure">
+                            <span class="slds-icon_container slds-icon-standard-account" title="Personal Information">
+                              <lightning:icon size="medium" iconName="standard:person_account"/>
+                              <span class="slds-assistive-text">Current Employment</span>
+                            </span>
+                                            </div>
+                                            <div class="slds-media__body">
+                                                <h2 class="slds-card__header-title">
+                                                    <a href="javascript:void(0);" class="slds-card__header-link slds-truncate"
+                                                       title="Card Header">
+                                                        <span>Current Employment</span>
+                                                    </a>
+                                                </h2>
+                                            </div>
+                                        </header>
+                                    </div>
+                                    <div class="slds-card__body slds-card__body_inner">
+                                        <lightning:layout multipleRows="true">
+                                            <lightning:layoutItem size="12">
+                                                <div class="slds-tabs_default">
+                                                    <ul class="slds-tabs_default__nav" role="tablist">
+                                                        <li aura:id="tab-buyer" class="slds-tabs_default__item slds-is-active"
+                                                            title="Buyer Info"
+                                                            role="presentation">
+                                                            <a id="buyer-ref-section" class="slds-tabs_default__link"
+                                                               onclick="{!c.sectionBuyerChange}" role="tab" tabindex="0"
+                                                               aria-selected="false"
+                                                               aria-controls="tab-default-1">
+                                                                Buyer Info
+                                                            </a>
+                                                        </li>
+                                                        <aura:if isTrue="{!v.isCoBuyerExist}">
+                                                            <li aura:id="tab-co-buyer" class="slds-tabs_default__item"
+                                                                title="Co-Buyer Info"
+                                                                role="presentation">
+                                                                <a id="co-buyer-ref-section" class="slds-tabs_default__link"
+                                                                   onclick="{!c.sectionBuyerChange}" role="tab" tabindex="-1"
+                                                                   aria-selected="true"
+                                                                   aria-controls="tab-default-2">
+                                                                    Co-Buyer Info
+                                                                </a>
+                                                            </li>
+                                                        </aura:if>
+
+                                                    </ul>
+                                                    <div aura:id="section-buyer" class="slds-tabs_default__content slds-show"
+                                                         role="tabpanel"
+                                                         aria-labelledby="tab-default-1__item">
+                                                        <lightning:layout horizontalAlign="center" multipleRows="true">
+                                                            <lightning:layoutItem size="6" padding="horizontal-large">
+                                                                <lightning:input label="Present Employer" name="presentEmployer"
+                                                                                 required="true"
+                                                                                 value="{!v.employment.Employer_Name__c}"/>
+                                                                <lightning:input label="Present Employer Address" name="presentEmployerAddress"
+                                                                                 required="true"
+                                                                                 value="{!v.employment.Employer_Street__c}"/>
+                                                                <lightning:input label="Present Employer City" name="presentEmployerCity"
+                                                                                 required="true"
+                                                                                 value="{!v.employment.Employer_City__c}"/>
+                                                                <c:selectlist name="Employer_State__c"
+                                                                              aura:id="employer-current-state"
+                                                                              label="Present Employer State"
+                                                                              sobject="Employment__c"
+                                                                              value="{!v.employment.Employer_State__c}"
+                                                                              required="true"
+                                                                />
+                                                                <lightning:input label="Present Employer Zip" name="presentEmployerZip"
+                                                                                 required="true"
+                                                                                 pattern="[0-9]{5}"
+                                                                                 messageWhenPatternMismatch="Valid ZIP format is '45-789'"
+                                                                                 maxlength="5"
+                                                                                 value="{!v.employment.Employer_Zip__c}"/>
+                                                                <lightning:input label="Occupation Or Rank" name="occupationOrRank"
+                                                                                 required="true"
+                                                                                 value="{!v.employment.Occupation_Or_Rank__c}"/>
+                                                            </lightning:layoutItem>
+                                                            <lightning:layoutItem size="6" padding="horizontal-large">
+                                                                <lightning:input label="Present Employer Phone"
+                                                                                 name="presentEmployerPhone"
+                                                                                 pattern="^\\([0-9]{3}\\) [0-9]{3}-[0-9]{4}$|^[0-9]{3}-[0-9]{3}-[0-9]{4}$"
+                                                                                 messageWhenPatternMismatch="Valid phone formats are '(123) 456-7890' or '123-456-7890'"
+                                                                                 required="true"
+                                                                                 onchange="{!c.setValidPhoneFormat}"
+                                                                                 value="{!v.employment.Employer_Phone__c}"/>
+                                                                <c:selectlist name="Employer_Duration_Years__c"
+                                                                              aura:id="employer-current-duration"
+                                                                              label="Present Employer Duration (Years)"
+                                                                              sobject="Employment__c"
+                                                                              noneExist="false"
+                                                                              default="0"
+                                                                              value="{!v.employment.Employer_Duration_Years__c}"
+                                                                              required="true"
+                                                                />
+                                                                <c:selectlist name="Employer_Duration_Months__c"
+                                                                              aura:id="employer-current-duration"
+                                                                              label="Present Employer Duration (Months)"
+                                                                              sobject="Employment__c"
+                                                                              value="{!v.employment.Employer_Duration_Months__c}"
+                                                                              required="true"
+                                                                              noneExist="false"
+                                                                              default="0"
+                                                                />
+                                                                <div style="position:relative;">
+                                                                    <c:selectlist name="Salary_Type__c"
+                                                                                  aura:id="employer-current-salary-type"
+                                                                                  label="Salary Type"
+                                                                                  sobject="Employment__c"
+                                                                                  value="{!v.employment.Salary_Type__c}"
+                                                                                  required="true"
+                                                                    />
+                                                                    <!--<lightning:helptext content="Salary type answers the question: How often do you receive a
+                                                                            paycheck?
+                                                                            Weekly means once a week
+                                                                            Bi-weekly means every two weeks
+                                                                            Semi-monthly means twice a month
+                                                                            Monthly means once a month" iconName="utility:info" class="popover-salary"/>-->
+                                                                </div>
+                                                                <lightning:input label="Net Period Paycheck"
+                                                                                 name="NetPeriodPaycheck"
+                                                                                 pattern="(.*)"
+                                                                                 value="{!v.employment.Applicant_Net_Period_Paycheck__c}"
+                                                                                 required="true"/>
+                                                                <div style="position:relative;">
+                                                                    <lightning:input label="Other Income"
+                                                                                     name="otherIncome"
+                                                                                     required="false"
+                                                                                     placeholder="0.00"
+                                                                                     value="{!v.employment.Other_Income__c}"/>
+                                                                    <lightning:helptext content="Alimony, child support or separate maintenance income need not be
+                                                                        revealed if you do not wish to have it considered as a basis for
+                                                                        repaying this obligation." iconName="utility:info" class="popover"/>
+                                                                </div>
+                                                            </lightning:layoutItem>
+                                                        </lightning:layout>
+                                                    </div>
+
+                                                    <div aura:id="section-co-buyer" class="slds-tabs_default__content slds-hide"
+                                                         role="tabpanel"
+                                                         aria-labelledby="tab-default-2__item">
+                                                        <lightning:layout horizontalAlign="center" multipleRows="true">
+                                                            <lightning:layoutItem size="6" padding="horizontal-large">
+                                                                <lightning:input label="Present Employer" name="presentEmployer"
+                                                                                 required="true"
+                                                                                 value="{!v.coAppEmployment.Employer_Name__c}"/>
+                                                                <lightning:input label="Present Employer Address" name="presentEmployerAddress"
+                                                                                 required="true"
+                                                                                 value="{!v.coAppEmployment.Employer_Street__c}"/>
+                                                                <lightning:input label="Present Employer City" name="presentEmployerCity"
+                                                                                 required="true"
+                                                                                 value="{!v.coAppEmployment.Employer_City__c}"/>
+                                                                <c:selectlist name="Employer_State__c"
+                                                                              aura:id="employer-current-state"
+                                                                              label="Present Employer State"
+                                                                              sobject="Employment__c"
+                                                                              value="{!v.coAppEmployment.Employer_State__c}"
+                                                                              required="true"
+                                                                />
+                                                                <lightning:input label="Present Employer Zip" name="presentEmployerZip"
+                                                                                 required="true"
+                                                                                 pattern="[0-9]{5}"
+                                                                                 messageWhenPatternMismatch="Valid ZIP format is '45-789'"
+                                                                                 maxlength="5"
+                                                                                 value="{!v.coAppEmployment.Employer_Zip__c}"/>
+                                                                <lightning:input label="Occupation Or Rank" name="occupationOrRank"
+                                                                                 required="true"
+                                                                                 value="{!v.coAppEmployment.Occupation_Or_Rank__c}"/>
+                                                            </lightning:layoutItem>
+                                                            <lightning:layoutItem size="6" padding="horizontal-large">
+                                                                <lightning:input label="Present Employer Phone"
+                                                                                 name="presentEmployerPhone"
+                                                                                 pattern="^\\([0-9]{3}\\) [0-9]{3}-[0-9]{4}$|^[0-9]{3}-[0-9]{3}-[0-9]{4}$"
+                                                                                 messageWhenPatternMismatch="Valid phone formats are '(123) 456-7890' or '123-456-7890'"
+                                                                                 onchange="{!c.setValidPhoneFormat}"
+                                                                                 required="true"
+                                                                                 value="{!v.coAppEmployment.Employer_Phone__c}"/>
+                                                                <c:selectlist name="Employer_Duration_Years__c"
+                                                                              aura:id="employer-current-duration"
+                                                                              label="Present Employer Duration (Years)"
+                                                                              sobject="Employment__c"
+                                                                              noneExist="false"
+                                                                              default="0"
+                                                                              value="{!v.coAppEmployment.Employer_Duration_Years__c}"
+                                                                              required="true"
+                                                                />
+                                                                <c:selectlist name="Employer_Duration_Months__c"
+                                                                              aura:id="employer-current-duration"
+                                                                              label="Present Employer Duration (Months)"
+                                                                              sobject="Employment__c"
+                                                                              value="{!v.coAppEmployment.Employer_Duration_Months__c}"
+                                                                              required="true"
+                                                                              noneExist="false"
+                                                                              default="0"
+                                                                />
+                                                                <div style="position:relative;">
+                                                                    <c:selectlist name="Salary_Type__c"
+                                                                                  aura:id="employer-current-salary-type"
+                                                                                  label="Salary Type"
+                                                                                  sobject="Employment__c"
+                                                                                  value="{!v.coAppEmployment.Salary_Type__c}"
+                                                                                  required="true"
+                                                                    />
+                                                                    <!-- <lightning:helptext content="Salary type answers the question: How often do you receive a
+                                                                             paycheck?
+                                                                             Weekly means once a week
+                                                                             Bi-weekly means every two weeks
+                                                                             Semi-monthly means twice a month
+                                                                             Monthly means once a month" iconName="utility:info" class="popover-salary"/>-->
+                                                                </div>
+                                                                <lightning:input label="Net Period Paycheck"
+                                                                                 name="NetPeriodPaycheck"
+                                                                                 pattern="(.*)"
+                                                                                 value="{!v.coAppEmployment.Applicant_Net_Period_Paycheck__c}"
+                                                                                 required="true"/>
+                                                                <div style="position:relative;">
+                                                                    <lightning:input label="Other Income"
+                                                                                     name="otherIncome"
+                                                                                     required="false"
+                                                                                     placeholder="0.00"
+                                                                                     value="{!v.coAppEmployment.Other_Income__c}"/>
+                                                                    <lightning:helptext content="Alimony, child support or separate maintenance income need not be
+                                                                        revealed if you do not wish to have it considered as a basis for
+                                                                        repaying this obligation." iconName="utility:info" class="popover"/>
+                                                                </div>
+                                                            </lightning:layoutItem>
+                                                        </lightning:layout>
+                                                    </div>
+                                                </div>
+                                            </lightning:layoutItem>
+                                        </lightning:layout>
+                                    </div>
+                                    <footer class="slds-card__footer">
+                                        <!-- <a class="slds-card__footer-action" href="javascript:void(0);">View All
+                                             <span class="slds-assistive-text">Accounts</span>
+                                         </a>-->
+                                    </footer>
+                                </article>
+                            </div>
+                        </aura:if>
+
+                        <aura:if isTrue="{!v.currentSectionName == 'previous-employment'}">
+                            <div class="slds-card__body slds-card__body_inner">
+                                <article class="slds-card slds-card_boundary">
+                                    <div class="slds-card__header slds-grid">
+                                        <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                                            <div class="slds-media__figure">
+                            <span class="slds-icon_container slds-icon-standard-account" title="Personal Information">
+                              <lightning:icon size="medium" iconName="standard:person_account"/>
+                              <span class="slds-assistive-text">Previous Employment</span>
+                            </span>
+                                            </div>
+                                            <div class="slds-media__body">
+                                                <h2 class="slds-card__header-title">
+                                                    <a href="javascript:void(0);" class="slds-card__header-link slds-truncate"
+                                                       title="Card Header">
+                                                        <span>Previous Employment</span>
+                                                    </a>
+                                                </h2>
+                                            </div>
+                                        </header>
+                                    </div>
+                                    <div class="slds-card__body slds-card__body_inner">
+                                        <lightning:layout multipleRows="true">
+                                            <lightning:layoutItem size="12">
+                                                <div class="slds-tabs_default">
+                                                    <ul class="slds-tabs_default__nav" role="tablist">
+                                                        <aura:if isTrue="{!!v.previousBuyerEmployerDisabled}">
+                                                            <li aura:id="tab-buyer" class="slds-tabs_default__item slds-is-active"
+                                                                title="Buyer Info"
+                                                                role="presentation">
+                                                                <a id="buyer-ref-section" class="slds-tabs_default__link"
+                                                                   onclick="{!c.sectionBuyerChange}" role="tab" tabindex="0"
+                                                                   aria-selected="false"
+                                                                   aria-controls="tab-default-1">
+                                                                    Buyer Info
+                                                                </a>
+                                                            </li>
+                                                        </aura:if>
+                                                        <aura:if isTrue="{!and(v.isCoBuyerExist, !v.previousCoBuyerEmployerDisabled)}">
+                                                            <li aura:id="tab-co-buyer" class="slds-tabs_default__item"
+                                                                title="Co-Buyer Info"
+                                                                role="presentation">
+                                                                <a id="co-buyer-ref-section" class="slds-tabs_default__link"
+                                                                   onclick="{!c.sectionBuyerChange}" role="tab" tabindex="-1"
+                                                                   aria-selected="true"
+                                                                   aria-controls="tab-default-2">
+                                                                    Co-Buyer Info
+                                                                </a>
+                                                            </li>
+                                                        </aura:if>
+                                                    </ul>
+                                                    <aura:if isTrue="{!!v.previousBuyerEmployerDisabled}">
+                                                        <div aura:id="section-buyer" class="slds-tabs_default__content" role="tabpanel"
+                                                         aria-labelledby="tab-default-1__item">
+                                                        <lightning:layout horizontalAlign="center" multipleRows="true">
+                                                            <lightning:layoutItem size="6" padding="horizontal-large">
+                                                                <lightning:input label="Previous Employer"
+                                                                                 name="previousEmployer"
+                                                                                 required="true"
+                                                                                 aura:id="buyer-previous-employer"
+                                                                                 value="{!v.previousEmployment.Employer_Name__c}"/>
+                                                                <c:selectlist name="Employer_Duration_Years__c"
+                                                                              aura:id="buyer-previous-employer"
+                                                                              label="Previous Employer Duration (Years)"
+                                                                              sobject="Employment__c"
+                                                                              noneExist="false"
+                                                                              default="0"
+                                                                              required="true"
+                                                                              value="{!v.previousEmployment.Employer_Duration_Years__c}"
+                                                                />
+                                                            </lightning:layoutItem>
+                                                            <lightning:layoutItem size="6" padding="horizontal-large">
+                                                                <c:selectlist name="Employer_Duration_Months__c"
+                                                                              aura:id="buyer-previous-employer"
+                                                                              label="Previous Employer Duration (Months)"
+                                                                              sobject="Employment__c"
+                                                                              required="true"
+                                                                              value="{!v.previousEmployment.Employer_Duration_Months__c}"
+                                                                              noneExist="false"
+                                                                              default="0"
+                                                                />
+                                                            </lightning:layoutItem>
+                                                        </lightning:layout>
+                                                    </div>
+                                                        <aura:set attribute="else">
+                                                            *Just click Co-Buyer
+                                                        </aura:set>
+                                                    </aura:if>
+
+                                                    <div aura:id="section-co-buyer" class="slds-tabs_default__content slds-hide" role="tabpanel"
+                                                         aria-labelledby="tab-default-2__item">
+                                                        <lightning:layout horizontalAlign="center" multipleRows="true">
+                                                            <lightning:layoutItem size="6" padding="horizontal-large">
+                                                                <lightning:input label="Previous Employer"
+                                                                                 name="previousEmployer"
+                                                                                 aura:id="cobuyer-previous-employer"
+                                                                                 required="true"
+                                                                                 value="{!v.previousCoAppEmployment.Employer_Name__c}"/>
+                                                                <c:selectlist name="Employer_Duration_Years__c"
+                                                                              aura:id="cobuyer-previous-employer"
+                                                                              label="Previous Employer Duration (Years)"
+                                                                              sobject="Employment__c"
+                                                                              noneExist="false"
+                                                                              default="0"
+                                                                              required="true"
+                                                                              value="{!v.previousCoAppEmployment.Employer_Duration_Years__c}"
+                                                                />
+                                                            </lightning:layoutItem>
+                                                            <lightning:layoutItem size="6" padding="horizontal-large">
+                                                                <c:selectlist name="Employer_Duration_Months__c"
+                                                                              aura:id="cobuyer-previous-employer"
+                                                                              label="Previous Employer Duration (Months)"
+                                                                              sobject="Employment__c"
+                                                                              required="true"
+                                                                              value="{!v.previousCoAppEmployment.Employer_Duration_Months__c}"
+                                                                              noneExist="false"
+                                                                              default="0"
+                                                                />
+                                                            </lightning:layoutItem>
+                                                        </lightning:layout>
+                                                    </div>
+                                                </div>
+                                            </lightning:layoutItem>
+                                        </lightning:layout>
+                                    </div>
+                                    <footer class="slds-card__footer">
+                                        <!-- <a class="slds-card__footer-action" href="javascript:void(0);">View All
+                                             <span class="slds-assistive-text">Accounts</span>
+                                         </a>-->
+                                    </footer>
+                                </article>
+                            </div>
+                        </aura:if>
+
+                        <aura:if isTrue="{!v.currentSectionName == 'references'}">
+                            <div class="slds-card__body slds-card__body_inner">
+                                <article class="slds-card slds-card_boundary">
+                                    <div class="slds-card__header slds-grid">
+                                        <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                                            <div class="slds-media__figure">
+                                                <span class="slds-icon_container slds-icon-standard-account" title="Personal Information">
+                                                  <lightning:icon size="medium" iconName="standard:person_account"/>
+                                                  <span class="slds-assistive-text">References</span>
+                                                </span>
+                                            </div>
+                                            <div class="slds-media__body">
+                                                <h2 class="slds-card__header-title">
+                                                    <a href="javascript:void(0);" class="slds-card__header-link slds-truncate"
+                                                       title="Card Header">
+                                                        <span>References</span>
+                                                    </a>
+                                                </h2>
+                                            </div>
+                                        </header>
+                                    </div>
+                                    <div class="slds-card__body slds-card__body_inner">
+                                        <lightning:layout multipleRows="true">
+                                            <lightning:layoutItem size="12">
+                                                <div class="slds-tabs_default">
+                                                    <div aura:id="references" class="slds-tabs_default__content slds-show"
+                                                         role="tabpanel"
+                                                         aria-labelledby="tab-default-1__item">
+                                                        <div class="slds-table_edit_container slds-is-relative" style="overflow-x: scroll">
+                                                            <table aria-multiselectable="true"
+                                                                   class="slds-table slds-no-cell-focus slds-table_bordered slds-table_edit slds-table_resizable-cols"
+                                                                   role="grid" >
+                                                                <thead>
+                                                                <tr class="slds-line-height_reset">
+                                                                    <th aria-label="Contact" aria-sort="none"
+                                                                        class="slds-text-title_caps slds-is-resizable slds-is-sortable" scope="col">
+                                                                        <div class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                                                        </div>
+                                                                    </th>
+                                                                    <th aria-label="Contact" aria-sort="none"
+                                                                        class="slds-text-title_caps slds-is-resizable slds-is-sortable" scope="col">
+                                                                        <div class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                                                        </div>
+                                                                    </th>
+                                                                    <th aria-label="Contact" aria-sort="none"
+                                                                        class="slds-text-title_caps slds-is-resizable slds-is-sortable" scope="col">
+                                                                        <div class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                                                        </div>
+                                                                    </th>
+                                                                    <th aria-label="Contact" aria-sort="none"
+                                                                        class="slds-text-title_caps slds-is-resizable slds-is-sortable" scope="col">
+                                                                        <div class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                                                        </div>
+                                                                    </th>
+                                                                    <th aria-label="Contact" aria-sort="none"
+                                                                        class="slds-text-title_caps slds-is-resizable slds-is-sortable" scope="col">
+                                                                        <div class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                                                        </div>
+                                                                    </th>
+                                                                    <th aria-label="Contact" aria-sort="none"
+                                                                        class="slds-text-title_caps slds-is-resizable slds-is-sortable" scope="col">
+                                                                        <div class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                                                        </div>
+                                                                    </th>
+                                                                    <th aria-label="Contact" aria-sort="none"
+                                                                        class="slds-text-title_caps slds-is-resizable slds-is-sortable" scope="col">
+                                                                        <div class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                                                        </div>
+                                                                    </th>
+	                                                                <aura:if isTrue="{!greaterthan(v.referencesList.length, 4)}">
+                                                                        <th aria-label="Contact" aria-sort="none"
+                                                                            class="slds-text-title_caps slds-is-resizable slds-is-sortable" scope="col">
+                                                                            <div class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                                                            </div>
+                                                                        </th>
+                                                                    </aura:if>
+                                                                </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                <div aura:id="section-references">
+	                                                                <aura:iteration items="{!v.referencesList}" indexVar="rowIndex"
+	                                                                                var="reference">
+		                                                                <tr aria-selected="false" class="slds-hint-parent" >
+			                                                                <td class="slds-cell-edit" scope="row" tabindex="0">
+				                                                                <lightning:input type="text" name="First Name"
+				                                                                                 label="First Name"
+				                                                                                 value="{!reference.FirstName}" required="true"/>
+			                                                                </td>
+			                                                                <td class="slds-cell-edit" scope="row" tabindex="0">
+				                                                                <lightning:input type="text" name="Last Name"
+				                                                                                 label="Last Name"
+				                                                                                 value="{!reference.LastName}" required="true"/>
+			                                                                </td>
+			                                                                <td class="slds-cell-edit" scope="row" tabindex="0">
+				                                                                <lightning:input type="Phone"
+				                                                                                 pattern="^\\([0-9]{3}\\) [0-9]{3}-[0-9]{4}$|^[0-9]{3}-[0-9]{3}-[0-9]{4}$"
+				                                                                                 messageWhenPatternMismatch="Valid phone formats are '(123) 456-7890' or '123-456-7890'"
+				                                                                                 onchange="{!c.setValidPhoneFormat}"
+				                                                                                 name="Phone"
+				                                                                                 label="Phone"
+				                                                                                 value="{!reference.Phone}" required="true"/>
+			                                                                </td>
+			                                                                <td class="slds-cell-edit" scope="row" tabindex="0">
+				                                                                <lightning:input type="text" name="Mailing Street"
+				                                                                                 label="Mailing Street"
+				                                                                                 value="{!reference.MailingStreet}"/>
+			                                                                </td>
+			                                                                <td class="slds-cell-edit" scope="row" tabindex="0">
+				                                                                <lightning:input type="text" name="Mailing City"
+				                                                                                 label="Mailing City"
+				                                                                                 value="{!reference.MailingCity}"/>
+			                                                                </td>
+			                                                                <td class="slds-cell-edit" scope="row" tabindex="0">
+				                                                                <lightning:input type="text" name="Mailing State"
+				                                                                                 label="Mailing State"
+				                                                                                 value="{!reference.MailingState}"/>
+			                                                                </td>
+			                                                                <td class="slds-cell-edit" scope="row" tabindex="0">
+				                                                                <lightning:input name="Mailing Postal Code"
+				                                                                                 label="Mailing Postal Code"
+				                                                                                 pattern="[0-9]{5}"
+				                                                                                 messageWhenPatternMismatch="Valid ZIP format is '45-789'"
+				                                                                                 maxlength="5"
+				                                                                                 value="{!reference.MailingPostalCode}"/>
+			                                                                </td>
+			                                                                <aura:if isTrue="{!greaterthan(rowIndex,3)}">
+                                                                                <td class="slds-cell-edit" scope="row" tabindex="0">
+                                                                                   <button class="slds-button slds-button_neutral slds-m-top&#45;&#45;xx-large"
+                                                                                           id="{!rowIndex}"
+                                                                                           type="button"
+                                                                                           onclick="{!c.removeReference}"
+                                                                                           style="padding: 0; border: 0; color: red; font-weight: bold;">
+                                                                                           X
+                                                                                   </button>
+                                                                                </td>
+                                                                            </aura:if>
+		                                                                </tr>
+	                                                                </aura:iteration>
+                                                                </div>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                    <div class="slds-button-group">
+	                                                    <aura:if isTrue="{!lessthan(v.referencesList.length, 6)}">
+                                                            <button onclick="{!c.addNewReference}"
+                                                                    class="slds-button slds-button_icon slds-cell-error slds-m-around--small"
+                                                                    label="Remove">
+                                                                <lightning:icon variant="warning" iconName="action:new" size="xx-small"
+                                                                                alternativeText="Add new"/>
+                                                            </button>
+                                                        </aura:if>
+                                                    </div>
+                                                </div>
+                                            </lightning:layoutItem>
+                                        </lightning:layout>
+                                    </div>
+                                </article>
+                            </div>
+                        </aura:if>
+
+                        <aura:if isTrue="{!v.currentSectionName == 'credit-history'}">
+                            <div class="slds-card__body slds-card__body_inner">
+                                <article class="slds-card slds-card_boundary">
+                                    <div class="slds-card__header slds-grid">
+                                        <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                                            <div class="slds-media__figure">
+                            <span class="slds-icon_container slds-icon-standard-account" title="Personal Information">
+                              <lightning:icon size="medium" iconName="standard:person_account"/>
+                              <span class="slds-assistive-text">Credit History</span>
+                            </span>
+                                            </div>
+                                            <div class="slds-media__body">
+                                                <h2 class="slds-card__header-title">
+                                                    <a href="javascript:void(0);" class="slds-card__header-link slds-truncate"
+                                                       title="Card Header">
+                                                        <span>Credit History</span>
+                                                    </a>
+                                                </h2>
+                                            </div>
+                                        </header>
+                                    </div>
+                                    <div class="slds-card__body slds-card__body_inner">
+                                        <lightning:layout multipleRows="true">
+                                            <lightning:layoutItem size="12">
+                                                <div class="slds-tabs_default">
+                                                    <ul class="slds-tabs_default__nav" role="tablist">
+                                                        <li aura:id="tab-buyer" class="slds-tabs_default__item slds-is-active"
+                                                            title="Buyer Info"
+                                                            role="presentation">
+                                                            <a id="buyer-ref-section" class="slds-tabs_default__link"
+                                                               onclick="{!c.sectionBuyerChange}" role="tab" tabindex="0"
+                                                               aria-selected="false"
+                                                               aria-controls="tab-default-1">
+                                                                Buyer Info
+                                                            </a>
+                                                        </li>
+                                                        <aura:if isTrue="{!v.isCoBuyerExist}">
+                                                            <li aura:id="tab-co-buyer" class="slds-tabs_default__item"
+                                                                title="Co-Buyer Info"
+                                                                role="presentation">
+                                                                <a id="co-buyer-ref-section" class="slds-tabs_default__link"
+                                                                   onclick="{!c.sectionBuyerChange}" role="tab" tabindex="-1"
+                                                                   aria-selected="true"
+                                                                   aria-controls="tab-default-2">
+                                                                    Co-Buyer Info
+                                                                </a>
+                                                            </li>
+                                                        </aura:if>
+
+                                                    </ul>
+                                                    <div aura:id="section-buyer" class="slds-tabs_default__content slds-show"
+                                                         role="tabpanel"
+                                                         aria-labelledby="tab-default-1__item">
+                                                        <lightning:layout horizontalAlign="center" multipleRows="true">
+                                                            <lightning:layoutItem size="6" padding="horizontal-large">
+                                                                <!--<ui:inputNumber label="Available Down Payment" aura:id="credit-history" required="true" value="{!v.creditApplication.Available_Down_Payment__c}"/>-->
+                                                                <lightning:input label="Available Down Payment" aura:id="credit-history"
+                                                                                 required="true"
+                                                                                 name="downPayment"
+                                                                                 type="number"
+                                                                                 formatter="currency"
+                                                                                 min="0.00"
+                                                                                 messageWhenRangeUnderflow="Available Down Payment Amount cannot be less than zero ($0.00)"
+                                                                                 value="{!v.creditApplication.Available_Down_Payment__c}"/>
+                                                            </lightning:layoutItem>
+                                                            <lightning:layoutItem size="6" padding="horizontal-large">
+                                                                <lightning:input label="Car Repossessed" name="carRepossessed"
+                                                                                 type="checkbox"
+                                                                                 checked="{!v.creditApplication.Car_Repossessed__c}"/>
+                                                                <lightning:input label="Currently in Bankruptcy?"
+                                                                                 name="currentlyInBancruptcy"
+                                                                                 type="checkbox"
+                                                                                 checked="{!v.creditApplication.Currently_In_Bankruptcy__c}"/>
+                                                                <lightning:input label="Ever Filed Bankruptcy or Chapter 13?"
+                                                                                 name="everFiledBancruptcy"
+                                                                                 type="checkbox"
+                                                                                 checked="{!v.creditApplication.Ever_Filed_Bankruptcy_or_Chapter_13__c}"/>
+                                                            </lightning:layoutItem>
+                                                        </lightning:layout>
+                                                    </div>
+
+                                                    <div aura:id="section-co-buyer" class="slds-tabs_default__content slds-hide"
+                                                         role="tabpanel"
+                                                         aria-labelledby="tab-default-2__item">
+                                                        <lightning:layout horizontalAlign="center" multipleRows="true">
+                                                            <lightning:layoutItem size="6" padding="horizontal-large">
+                                                                <lightning:input label="Co-buyer Available Down Payment" aura:id="credit-history"
+                                                                                 name="coBuyerDownPayment"
+                                                                                 required="true"
+                                                                                 type="number"
+                                                                                 formatter="currency"
+                                                                                 min="0.00"
+                                                                                 messageWhenRangeUnderflow="Co-buyer's Available Down Payment Amount cannot be less than zero ($0.00)"
+                                                                                 value="{!v.creditApplication.Co_App_Available_Down_Payment__c}"/>
+                                                            </lightning:layoutItem>
+                                                            <lightning:layoutItem size="6" padding="horizontal-large">
+                                                                <lightning:input label="Co-buyer Car Repossessed"
+                                                                                 name="coBuyerCarRepossessed"
+                                                                                 type="checkbox"
+                                                                                 checked="{!v.creditApplication.Co_App_Car_Repossessed__c}"/>
+                                                                <lightning:input label="Co-buyer Currently in Bankruptcy?"
+                                                                                 name="cobuyerCurrentlyInBancruptcy"
+                                                                                 type="checkbox"
+                                                                                 checked="{!v.creditApplication.Co_App_Currently_In_Bankruptcy__c}"/>
+                                                                <lightning:input
+                                                                        label="Co-buyer Ever Filed Bankruptcy or Chapter 13?"
+                                                                        name="coBuyerEverFiledBancruptcy"
+                                                                        type="checkbox"
+                                                                        checked="{!v.creditApplication.Co_App_gone_through_bankruptcy__c}"/>
+                                                            </lightning:layoutItem>
+                                                        </lightning:layout>
+                                                    </div>
+                                                </div>
+                                            </lightning:layoutItem>
+                                        </lightning:layout>
+                                    </div>
+                                </article>
+                            </div>
+                        </aura:if>
+
+                        <aura:if isTrue="{!v.currentSectionName == 'military-experience'}">
+                            <div class="slds-card__body slds-card__body_inner">
+                                <article class="slds-card slds-card_boundary">
+                                    <div class="slds-card__header slds-grid">
+                                        <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                                            <div class="slds-media__figure">
+                            <span class="slds-icon_container slds-icon-standard-account" title="Personal Information">
+                              <lightning:icon size="medium" iconName="standard:person_account"/>
+                              <span class="slds-assistive-text">Military Experience</span>
+                            </span>
+                                            </div>
+                                            <div class="slds-media__body">
+                                                <h2 class="slds-card__header-title">
+                                                    <a href="javascript:void(0);" class="slds-card__header-link slds-truncate"
+                                                       title="Card Header">
+                                                        <span>Military Experience</span>
+                                                    </a>
+                                                </h2>
+                                            </div>
+                                        </header>
+                                    </div>
+                                    <div class="slds-card__body slds-card__body_inner">
+                                        <lightning:layout multipleRows="true">
+                                            <lightning:layoutItem size="12">
+                                                <div class="slds-tabs_default">
+                                                    <ul class="slds-tabs_default__nav" role="tablist">
+                                                        <li aura:id="tab-buyer" class="slds-tabs_default__item slds-is-active"
+                                                            title="Buyer Info"
+                                                            role="presentation">
+                                                            <a id="buyer-ref-section" class="slds-tabs_default__link"
+                                                               onclick="{!c.sectionBuyerChange}" role="tab" tabindex="0"
+                                                               aria-selected="false"
+                                                               aria-controls="tab-default-1">
+                                                                Buyer Info
+                                                            </a>
+                                                        </li>
+                                                        <aura:if isTrue="{!v.isCoBuyerExist}">
+                                                            <li aura:id="tab-co-buyer" class="slds-tabs_default__item"
+                                                                title="Co-Buyer Info"
+                                                                role="presentation">
+                                                                <a id="co-buyer-ref-section" class="slds-tabs_default__link"
+                                                                   onclick="{!c.sectionBuyerChange}" role="tab" tabindex="-1"
+                                                                   aria-selected="true"
+                                                                   aria-controls="tab-default-2">
+                                                                    Co-Buyer Info
+                                                                </a>
+                                                            </li>
+                                                        </aura:if>
+
+                                                    </ul>
+                                                    <div aura:id="section-buyer" class="slds-tabs_default__content slds-show"
+                                                         role="tabpanel"
+                                                         aria-labelledby="tab-default-1__item">
+                                                        <lightning:layout horizontalAlign="spread" multipleRows="true">
+                                                            <lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--large">
+                                                                <lightning:input type="checkbox"
+                                                                                 label="Is Military"
+                                                                                 name="isMilitary"
+                                                                                 checked="{!v.buyer.Is_Military__c}"/>
+                                                            </lightning:layoutItem>
+                                                            <lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+                                                                <c:selectlist name="Military_Status__c"
+                                                                              aura:id="buyer-military"
+                                                                              label="Military Status"
+                                                                              sobject="Contact"
+                                                                              value="{!v.buyer.Military_Status__c}"
+                                                                              disabled="{!!v.buyer.Is_Military__c}"
+                                                                              required="{!v.buyer.Is_Military__c}"
+                                                                />
+                                                            </lightning:layoutItem>
+                                                        </lightning:layout>
+                                                    </div>
+
+                                                    <div aura:id="section-co-buyer" class="slds-tabs_default__content slds-hide"
+                                                         role="tabpanel"
+                                                         aria-labelledby="tab-default-2__item">
+                                                        <lightning:layout horizontalAlign="end" multipleRows="true">
+                                                            <lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--large">
+                                                                <lightning:input type="checkbox"
+                                                                                 label="Is Military"
+                                                                                 name="isMilitary"
+                                                                                 checked="{!v.coBuyer.Is_Military__c}"/>
+                                                            </lightning:layoutItem>
+                                                            <lightning:layoutItem size="6" padding="horizontal-large"
+                                                                                  class="slds-m-top&#45;&#45;small">
+                                                                <c:selectlist name="Military_Status__c"
+                                                                              aura:id="cobuyer-military"
+                                                                              label="Military Status"
+                                                                              sobject="Contact"
+                                                                              value="{!v.coBuyer.Military_Status__c}"
+                                                                              disabled="{!!v.coBuyer.Is_Military__c}"
+                                                                              required="{!v.coBuyer.Is_Military__c}"
+                                                                />
+                                                            </lightning:layoutItem>
+                                                        </lightning:layout>
+                                                    </div>
+                                                </div>
+                                            </lightning:layoutItem>
+                                        </lightning:layout>
+                                    </div>
+                                    <footer class="slds-card__footer">
+                                        <!-- <a class="slds-card__footer-action" href="javascript:void(0);">View All
+                                             <span class="slds-assistive-text">Accounts</span>
+                                         </a>-->
+                                    </footer>
+                                </article>
+                            </div>
+                        </aura:if>
+
+                        <aura:if isTrue="{!v.currentSectionName == 'repeat-customer'}">
+                            <div class="slds-card__body slds-card__body_inner">
+                                <article class="slds-card slds-card_boundary">
+                                    <div class="slds-card__header slds-grid">
+                                        <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                                            <div class="slds-media__figure">
+                            <span class="slds-icon_container slds-icon-standard-account" title="Personal Information">
+                              <lightning:icon size="medium" iconName="standard:person_account"/>
+                              <span class="slds-assistive-text">Repeat Customer</span>
+                            </span>
+                                            </div>
+                                            <div class="slds-media__body">
+                                                <h2 class="slds-card__header-title">
+                                                    <a href="javascript:void(0);" class="slds-card__header-link slds-truncate"
+                                                       title="Card Header">
+                                                        <span>Repeat Customer</span>
+                                                    </a>
+                                                </h2>
+                                            </div>
+                                        </header>
+                                    </div>
+                                    <div class="slds-card__body slds-card__body_inner">
+                                        <lightning:layout multipleRows="true">
+                                            <lightning:layoutItem size="12">
+                                                <div class="slds-tabs_default">
+                                                    <ul class="slds-tabs_default__nav" role="tablist">
+                                                        <li aura:id="tab-buyer" class="slds-tabs_default__item slds-is-active"
+                                                            title="Buyer Info"
+                                                            role="presentation">
+                                                            <a id="buyer-ref-section" class="slds-tabs_default__link"
+                                                               onclick="{!c.sectionBuyerChange}" role="tab" tabindex="0"
+                                                               aria-selected="false"
+                                                               aria-controls="tab-default-1">
+                                                                Buyer Info
+                                                            </a>
+                                                        </li>
+                                                        <aura:if isTrue="{!v.isCoBuyerExist}">
+                                                            <li aura:id="tab-co-buyer" class="slds-tabs_default__item"
+                                                                title="Co-Buyer Info"
+                                                                role="presentation">
+                                                                <a id="co-buyer-ref-section" class="slds-tabs_default__link"
+                                                                   onclick="{!c.sectionBuyerChange}" role="tab" tabindex="-1"
+                                                                   aria-selected="true"
+                                                                   aria-controls="tab-default-2">
+                                                                    Co-Buyer Info
+                                                                </a>
+                                                            </li>
+                                                        </aura:if>
+                                                    </ul>
+                                                    <div aura:id="section-buyer" class="slds-tabs_default__content slds-show"
+                                                         role="tabpanel"
+                                                         aria-labelledby="tab-default-1__item">
+                                                        <lightning:layout horizontalAlign="center" multipleRows="true">
+                                                            <lightning:layoutItem size="12" padding="horizontal-large"
+                                                                                  class="slds-m-top&#45;&#45;small">
+                                                                <c:selectlist name="Repeat_Customer__c"
+                                                                              aura:id="repeat-customer"
+                                                                              label="Repeat Customer?"
+                                                                              sobject="Credit_Application__c"
+                                                                              noneExist="false"
+                                                                              default="No"
+                                                                              value="{!v.creditApplication.Repeat_Customer__c}"
+                                                                              required="false"
+                                                                />
+                                                                <c:selectlist name="Repeat_Reason__c"
+                                                                              aura:id="repeat-customer"
+                                                                              label="Repeat Reason"
+                                                                              sobject="Credit_Application__c"
+                                                                              value="{!v.creditApplication.Repeat_Reason__c}"
+                                                                              required="false"
+                                                                              disabled="{!v.creditApplication.Repeat_Customer__c == 'No'}"
+                                                                />
+                                                                <lightning:input label="Previous Account Number"
+                                                                                 name="previousAccountNumber"
+                                                                                 value="{!v.creditApplication.Previous_Account_Number__c}"
+                                                                                 disabled="{!v.creditApplication.Repeat_Customer__c == 'No'}"/>
+                                                            </lightning:layoutItem>
+                                                        </lightning:layout>
+                                                    </div>
+
+                                                    <div aura:id="section-co-buyer" class="slds-tabs_default__content slds-hide"
+                                                         role="tabpanel"
+                                                         aria-labelledby="tab-default-2__item">
+                                                        <lightning:layout horizontalAlign="center" multipleRows="true">
+                                                            <lightning:layoutItem size="12" padding="horizontal-large"
+                                                                                  class="slds-m-top&#45;&#45;small">
+                                                                <c:selectlist name="Co_App_Repeat_Customer__c"
+                                                                              aura:id="repeat-customer"
+                                                                              label="Co-buyer Repeat Customer?"
+                                                                              sobject="Credit_Application__c"
+                                                                              noneExist="false"
+                                                                              default="No"
+                                                                              value="{!v.creditApplication.Co_App_Repeat_Customer__c}"
+                                                                              required="false"
+                                                                />
+                                                                <c:selectlist name="Co_App_Repeat_Reason__c"
+                                                                              aura:id="repeat-customer"
+                                                                              label="Co-buyer Repeat Reason"
+                                                                              sobject="Credit_Application__c"
+                                                                              value="{!v.creditApplication.Co_App_Repeat_Reason__c}"
+                                                                              required="false"
+                                                                              disabled="{!v.creditApplication.Co_App_Repeat_Customer__c == 'No'}"
+                                                                />
+                                                                <lightning:input label="Co-buyer Previous Account Number"
+                                                                                 name="coBuyerPreviousAccountNumber"
+                                                                                 value="{!v.creditApplication.Co_App_Previous_Account_Number__c}"
+                                                                                 disabled="{!v.creditApplication.Co_App_Repeat_Customer__c == 'No'}"
+                                                                />
+                                                            </lightning:layoutItem>
+                                                        </lightning:layout>
+                                                    </div>
+                                                </div>
+                                            </lightning:layoutItem>
+                                        </lightning:layout>
+                                    </div>
+                                </article>
+                            </div>
+                        </aura:if>
+
+                        <aura:if isTrue="{!v.currentSectionName == 'optional-message'}">
+                            <div class="slds-card__body slds-card__body_inner">
+                                <article class="slds-card slds-card_boundary">
+                                    <div class="slds-card__header slds-grid">
+                                        <header class="slds-media slds-media_center slds-has-flexi-truncate">
+                                            <div class="slds-media__figure">
+                            <span class="slds-icon_container slds-icon-standard-account" title="Personal Information">
+                              <lightning:icon size="medium" iconName="standard:person_account"/>
+                              <span class="slds-assistive-text">Optional Message</span>
+                            </span>
+                                            </div>
+                                            <div class="slds-media__body">
+                                                <h2 class="slds-card__header-title">
+                                                    <a href="javascript:void(0);" class="slds-card__header-link slds-truncate"
+                                                       title="Card Header">
+                                                        <span>Optional Message</span>
+                                                    </a>
+                                                </h2>
+                                            </div>
+                                        </header>
+                                    </div>
+                                    <div class="slds-card__body slds-card__body_inner">
+                                        <lightning:layout multipleRows="true">
+                                            <lightning:layoutItem size="12">
+                                                <div class="slds-tabs_default">
+                                                    <lightning:textarea label="Message"
+                                                                        name="message"
+                                                                        required="false"
+                                                                        value="{!v.creditApplication.Credit_Application_Comment__c}"/>
+                                                </div>
+                                            </lightning:layoutItem>
+                                        </lightning:layout>
+                                    </div>
+                                    <footer class="slds-card__footer">
+                                        <!-- <a class="slds-card__footer-action" href="javascript:void(0);">View All
+                                             <span class="slds-assistive-text">Accounts</span>
+                                         </a>-->
+                                    </footer>
+                                </article>
+                            </div>
+                        </aura:if>
+		            </lightning:layoutItem>
+
+                    <aura:set attribute="else">
+                        <lightning:layoutItem size="8">
+	                        <div>
+		                        <section role="modal" tabindex="-1" aria-label="Meaningful description of the modal content" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-fade-in-open">
+			                        <div class="slds-modal__container">
+				                        <header class="slds-modal__header">
+					                        <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">Warning</h2>
+				                        </header>
+				                        <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+					                        <p>Credit App is submitted and not available for editing now.</p>
+				                        </div>
+			                        </div>
+		                        </section>
+		                        <div class="slds-backdrop"></div>
+	                        </div>
+                        </lightning:layoutItem>
+                    </aura:set>
+                </aura:if>
+
+                <aura:if isTrue="{!v.isInitComplete}">
+                    <lightning:layoutItem size="4" class="slds-p-left_xx-small">
+                        <c:creditAppBox aura:id="cBox" recordId="{!v.recordId}" toBeReloaded="{!v.appBoxToBeReloaded}" />
+                    </lightning:layoutItem>
+                </aura:if>
+	        </lightning:layout>
+		<footer class="slds-card__footer">
+			<!--<a class="slds-card__footer-action" href="javascript:void(0);">View All
+                <span class="slds-assistive-text">Accounts</span>
+            </a>-->
+		</footer>
+	</article>
+
+	<aura:if isTrue="{!v.deleteCoBuyerModal}">
+		<div class="demo-only" style="height: 20rem;">
+			<section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1"
+			         class="slds-modal slds-fade-in-open">
+				<div class="slds-modal__container">
+					<header class="slds-modal__header">
+						<button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close">
+							<a onclick="{!c.closeModal}">
+								<lightning:icon iconName="utility:close"/>
+								<span class="slds-assistive-text">Close</span>
+							</a>
+						</button>
+						<h2 class="slds-text-heading_medium slds-hyphenate">Delete Co Buyer...</h2>
+					</header>
+					<lightning:layout multipleRows="true" class="slds-modal__content slds-p-around_medium">
+						<lightning:layoutItem size="12" class="slds-grid slds-grid--align-center">
+							Are you sure to delete Co Buyer?
+						</lightning:layoutItem>
+					</lightning:layout>
+					<footer class="slds-modal__footer">
+						<lightning:layout multipleRows="true">
+							<lightning:layoutItem size="12" class="slds-text-align--center">
+								<lightning:button label="Yes" onclick="{!c.deleteCoBuyer}"/>
+								<lightning:button label="No" onclick="{!c.closeModal}"/>
+							</lightning:layoutItem>
+						</lightning:layout>
+					</footer>
+				</div>
+			</section>
+			<div class="slds-backdrop slds-backdrop_open"></div>
+		</div>
+	</aura:if>
+
+	<aura:if isTrue="{!v.finishEditModal}">
+		<div class="demo-only" style="height: 20rem;">
+			<section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1"
+			         class="slds-modal slds-fade-in-open">
+				<div class="slds-modal__container">
+					<header class="slds-modal__header">
+
+						<h2 class="slds-text-heading_medium slds-hyphenate">Saving...</h2>
+					</header>
+					<lightning:layout multipleRows="false" class="slds-modal__content slds-p-around_medium">
+						<lightning:layoutItem size="12" class="slds-grid slds-grid--align-center">
+							<aura:if isTrue="{!v.isFormValid}">
+								Seems like credit application is ready to submit. Please review all fields and hit "Ready" if all data is correct.
+								<aura:set attribute="else">
+                                    <lightning:layout multipleRows="true">
+                                        <lightning:layoutItem size="12">
+                                            Credit Application is not ready to submit. Fill required information or save it and edit later.
+                                            <br/>Following fields are not complete:
+                                        </lightning:layoutItem>
+
+                                        <lightning:layoutItem size="12">
+                                            <lightning:layout horizontalAlign="center">
+                                                <lightning:layoutItem size="{!if(v.isCoBuyerExist, 6, 12)}">
+                                                    BUYER FIELDS
+                                                    <aura:iteration var="field" items="{!v.invalidFields.buyerFields}">
+                                                        <lightning:layoutItem size="12">
+                                                                {!field}
+                                                        </lightning:layoutItem>
+                                                    </aura:iteration>
+                                                </lightning:layoutItem>
+
+                                                <aura:if isTrue="{!v.isCoBuyerExist}">
+                                                    <lightning:layoutItem size="6">
+                                                        COBUYER FIELDS
+                                                        <aura:iteration var="field" items="{!v.invalidFields.coBuyerFields}">
+                                                            <lightning:layoutItem size="12">
+                                                                    {!field}
+                                                            </lightning:layoutItem>
+                                                        </aura:iteration>
+                                                    </lightning:layoutItem>
+                                                </aura:if>
+                                            </lightning:layout>
+
+
+                                        </lightning:layoutItem>
+                                    </lightning:layout>
+								</aura:set>
+							</aura:if>
+						</lightning:layoutItem>
+					</lightning:layout>
+					<footer class="slds-modal__footer">
+						<lightning:layoutItem size="12" class="slds-text-align--center">
+							<aura:if isTrue="{!v.isFormValid}">
+								<lightning:button aura:id="search-button" label="Ready" variant="brand"
+								                  onclick="{!c.finishSaveCreditApplication}"/>
+								<lightning:button aura:id="search-button" label="Cancel" onclick="{!c.closeModal}"/>
+
+								<aura:set attribute="else">
+									<lightning:button aura:id="search-button" label="Save And Edit Later"
+									                  onclick="{!c.finishSaveCreditApplication}"/>
+									<button class="slds-button slds-button_neutral" id="edit-now-button" type="button" onclick="{!c.closeModal}">Edit Now</button>
+								</aura:set>
+							</aura:if>
+
+						</lightning:layoutItem>
+					</footer>
+				</div>
+			</section>
+			<div class="slds-backdrop slds-backdrop_open"></div>
+		</div>
+	</aura:if>
+	<aura:if isTrue="{!v.addCobuyerModal}">
+		<div class="demo-only" style="height: 20rem;">
+			<section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true"
+			         aria-describedby="modal-content-id-1"
+			         class="slds-modal slds-fade-in-open">
+				<div class="slds-modal__container">
+					<header class="slds-modal__header">
+						<button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+						        title="Close">
+							<a onclick="{!c.closeModal}">
+								<lightning:icon iconName="utility:close"/>
+								<span class="slds-assistive-text">Close</span>
+							</a>
+						</button>
+						<h2 class="slds-text-heading_medium slds-hyphenate">Add Co-Buyer</h2>
+					</header>
+					<lightning:layout multipleRows="true" class="slds-modal__content slds-p-around_medium">
+						<lightning:layoutItem size="12">
+							<lightning:input name="coBuyerSocialSecurityNumber"
+							                 label="Co-Buyer Social Security Number"
+							                 value="{!v.coBuyerSocialSecurityNumber}"
+							                 pattern="^[0-9]{9}$|^[0-9]{3}-[0-9]{2}-[0-9]{4}$"
+							                 messageWhenPatternMismatch="Correct formats for social security number are '123456789' or '123-45-6789'"
+							                 messageWhenBadInput="Co-Buyer Social Security Number couldn't be equals Buyer Social Security Number!"
+							                 onchange="{!c.validateSocialSecurityNumber}"
+							/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="12">
+							<lightning:button aura:id="search-button" label="Search" disabled="true"
+							                  class="slds-m-top--small"
+							                  onclick="{!c.searchCobuyer}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="12" aura:id="add-cobuyer-modal-body">
+                        {!v.searchResult.coBuyerMessage}
+							<aura:if isTrue="{!not(empty(v.searchResult.coBuyerOpportunityId))}">
+								<a onclick="{!c.redirectToOpportunity}">Go to Opportunity</a>
+							</aura:if>
+						</lightning:layoutItem>
+
+					</lightning:layout>
+					<footer class="slds-modal__footer">
+						<lightning:button label="Cancel" onclick="{!c.closeModal}"/>
+						<lightning:button aura:id="save-button" label="Save" disabled="true"
+						                  onclick="{!c.saveCoBuyer}"/>
+					</footer>
+				</div>
+			</section>
+			<div class="slds-backdrop slds-backdrop_open"></div>
+		</div>
+	</aura:if>
+
+
+    <lightning:layout horizontalAlign="center" verticalAlign="center" multipleRows="true" class="slds-is-relative slds-card component-box">
+        <lightning:layoutItem aura:id="box-container" size="12" class="slds-p-around_medium slds-box">
+            <aura:if aura:id="action-spinner" isTrue="false">
+                <lightning:spinner variant="brand" size="large" alternativeText="Loading" />
+            </aura:if>
+        </lightning:layoutItem>
+    </lightning:layout>
+
+</aura:component>

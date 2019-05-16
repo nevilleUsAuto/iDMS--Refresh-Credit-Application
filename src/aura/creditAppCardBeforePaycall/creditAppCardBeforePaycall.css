@@ -1,0 +1,16 @@
+.THIS .slds-max-size_1-of-2 {
+    max-width: 50%;
+}
+
+.THIS .slds-popover__body .slds-dl_inline {
+    width: 11rem;
+}
+
+.THIS .bottom-popover-position {
+    bottom: 1.8rem;
+    right: -1rem;
+}
+
+.THIS .bottom-help-popover-position {
+    right: 1.7rem;
+}

@@ -1,0 +1,67 @@
+<!--
+ - Created by admin on 2019-05-01.
+ -->
+
+<aura:component description="iDMS_push -- component that pushes the deal to IDMS"
+                controller="iDMS_pushController"
+                implements="flexipage:availableForRecordHome,flexipage:availableForAllPageTypes,force:hasRecordId">
+
+    <aura:attribute name="iDMS_StockNo" type="String" /> <!-- default="221883" -->
+    <aura:attribute name="iDMS_dealId" type="String"  /> <!-- default="147567" -->
+    <aura:attribute name="isAdmin" type="Boolean" default="false" access="public" />
+    <aura:attribute name="token" type="String" />
+
+    <aura:handler name="init" value="{!this}" action="{!c.doInit}" />
+
+    <lightning:layout horizontalAlign="center" verticalAlign="center" multipleRows="true" class="slds-is-relative slds-card component-box">
+        <lightning:layoutItem aura:id="box-container" size="12" class="slds-p-around_medium slds-box">
+            <aura:if aura:id="action-spinner" isTrue="false">
+                <lightning:spinner variant="brand" size="large" alternativeText="Loading" />
+            </aura:if>
+        </lightning:layoutItem>
+    </lightning:layout>
+
+
+    <div aria-labelledby="idmsdealpushform" class="slds-color__background_gray-4">
+        <!-- BOXED AREA -->
+        <fieldset class="slds-box slds-theme--default slds-container--small slds-color__background_gray-4">
+            <legend id="idmsdealpushform" class="slds-text-heading--small slds-p-vertical--x-small">
+                iDMS Push
+            </legend>
+
+            <form class="slds-form--inline">
+                <lightning:layout>
+                    <lightning:layoutItem padding="around-small" size="6">
+                        <lightning:input aura:id="idmsdealpushform"
+                                         label="Vehicle Stock Number:"
+                                         name="stockNo"
+                                         value="{!v.iDMS_StockNo}"
+                                         messageWhenValueMissing="The Stock Number is required!"
+                                         required="true" />
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem padding="around-small" size="6">
+                        <lightning:input aura:id="idmsdealpushform"
+                                         label="Credit Application Deal ID:"
+                                         name="dealId"
+                                         value="{!v.iDMS_dealId}"
+                                         messageWhenValueMissing="The Deal ID is required!"
+                                         required="true" />
+                    </lightning:layoutItem>
+                </lightning:layout>
+
+                <lightning:layout class="slds-align--absolute-center">
+                    <lightning:layoutItem>
+                        <lightning:button label="Send Deal to iDMS"
+                                          class="slds-m-top--medium"
+                                          variant="brand"
+                                          onclick="{!c.sendDeal}" />
+                    </lightning:layoutItem>
+                </lightning:layout>
+
+
+            </form>
+        </fieldset>
+    </div>
+
+</aura:component>

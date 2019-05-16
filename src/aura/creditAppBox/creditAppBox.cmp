@@ -1,0 +1,36 @@
+<aura:component controller="CreditAppBoxComponentController" implements="flexipage:availableForRecordHome,force:hasRecordId" access="global">
+    <aura:dependency resource="markup://c:creditAppQualify" />
+    <aura:dependency resource="markup://c:creditAppCard" />
+
+    <aura:attribute name="toBeReloaded" type="Boolean" default="false"/>
+
+    <aura:attribute name="showIDMSNow" type="Boolean" default="false" />
+    <aura:attribute name="isAdmin" type="Boolean" default="true"
+                    description="used and set by the iDMS_push component.  attribute passed by value to the component" />
+
+
+    <aura:handler name="init" value="{!this}" action="{!c.init}" />
+    <aura:handler name="change" value="{!v.toBeReloaded}" action="{!c.init}" />
+    <aura:handler name="reloadBox" event="c:refresh" action="{!c.init}" />
+    <aura:handler name="showSpinner" event="c:showSpinner" action="{!c.showSpinner}" />
+    <aura:handler name="hideSpinner" event="c:hideSpinner" action="{!c.hideSpinner}" />
+
+    <lightning:layout horizontalAlign="center" verticalAlign="center" multipleRows="true" class="slds-is-relative slds-card component-box">
+        <lightning:layoutItem aura:id="box-container" size="12" class="slds-p-around_medium slds-box"></lightning:layoutItem>
+
+        <aura:if aura:id="action-spinner" isTrue="false">
+            <lightning:spinner variant="brand" size="large" alternativeText="Loading" />
+        </aura:if>
+    </lightning:layout>
+
+    <aura:if isTrue="{!v.showIDMSNow}">
+        <lightning:layoutItem size="12" class="slds-m-top--medium">
+            <aura:if isTrue="{!v.isAdmin}">
+                <c:iDMS_push aura:id="idms" isAdmin="{!v.isAdmin}" />
+            </aura:if>
+        </lightning:layoutItem>
+    </aura:if>
+
+
+
+</aura:component>

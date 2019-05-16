@@ -1,0 +1,320 @@
+<aura:component controller="CreditAppCardComponentController" implements="flexipage:availableForRecordHome" access="global">
+    <aura:attribute name="creditApp" type="Credit_Application__c" />
+	<aura:attribute name="employment" type="Employment__c" />
+    <aura:attribute name="salesPortalAccessToken" type="String" />
+    <aura:attribute name="userProfile" type="String" />
+
+    <aura:attribute name="dealDetails" type="SalesPortalAPIResponses.DealDetails" access="private" />
+
+    <aura:attribute name="isManager" type="Boolean" access="private" />
+    <aura:attribute name="areActionsAllowed" type="Boolean" access="private" />
+
+    <aura:handler name="init" action="{!c.init}" value="{!this}" />
+
+    <aura:registerEvent name="reloadBox" type="c:refresh" />
+    <aura:registerEvent name="showSpinner" type="c:showSpinner" />
+    <aura:registerEvent name="hideSpinner" type="c:hideSpinner" />
+
+    <lightning:layout class="slds-tabs--scoped slds-p-horizontal--large">
+        <lightning:tabset variant="scoped">
+            <lightning:tab label="Deal Details">
+                <lightning:layout horizontalAlign="center" verticalAlign="center" multipleRows="true">
+                    <lightning:layoutItem size="12" class="slds-form-element slds-has-divider--bottom slds-m-bottom--small slds-list--horizontal slds-grid_align-spread">
+                        <span class="slds-truncate">% Down &ge; 16995:</span>
+                        <span class="slds-float--right slds-truncate">
+                            <lightning:formattedNumber value="{!v.dealDetails.percentBelow}" style="percent" minimumFractionDigits="1" maximumFractionDigits="4" />
+                        </span>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="12" class="slds-form-element slds-has-divider--bottom slds-m-bottom--small slds-list--horizontal slds-grid_align-spread">
+                        <span class="slds-truncate">% Down &lt; 16995:</span>
+                        <span class="slds-float--right slds-truncate">
+                            <lightning:formattedNumber value="{!v.dealDetails.percentUnder}" style="percent" minimumFractionDigits="0" maximumFractionDigits="4" />
+                        </span>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="12" class="slds-form-element slds-has-divider--bottom slds-m-bottom--small slds-list--horizontal slds-grid_align-spread">
+                        <span class="slds-truncate">Max Monthly:</span>
+                        <span class="slds-float--right slds-truncate">
+                            ${!v.dealDetails.maxMonthly}
+                        </span>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="12" class="slds-form-element slds-has-divider--bottom slds-m-bottom--small slds-list--horizontal slds-grid_align-spread">
+                        <span class="slds-truncate">Max Price:</span>
+                        <span class="slds-float--right slds-truncate">
+                            ${!v.dealDetails.maxPrice}
+                        </span>
+                    </lightning:layoutItem>
+                </lightning:layout>
+
+                <div class="slds-list--horizontal slds-grid_align-center">
+                    <lightning:button class="slds-button--brand" label="Submit" onclick="{!c.sendDealForFinalApproval}" disabled="{!or(not(v.isManager), not(v.areActionsAllowed))}" />
+                </div>
+            </lightning:tab>
+
+            <lightning:tab label="Vehicle Details">
+                <lightning:layout horizontalAlign="center" verticalAlign="center" multipleRows="true">
+                    <lightning:layoutItem size="12" class="slds-form-element slds-has-divider--bottom slds-m-bottom--xx-small slds-list--horizontal slds-grid_align-spread">
+                        <span class="slds-truncate">Location:</span>
+                        <span class="slds-float--right slds-truncate">
+                                {!v.dealDetails.vehicleDetails.lotName}
+                        </span>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="12" class="slds-form-element slds-has-divider--bottom slds-m-bottom--xx-small slds-list--horizontal slds-grid_align-spread">
+                        <span class="slds-truncate">Car:</span>
+                        <span class="slds-float--right slds-truncate">
+                                {!v.dealDetails.vehicleDetails.carMake + ' ' + v.dealDetails.vehicleDetails.carModel}
+                        </span>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="12" class="slds-form-element slds-has-divider--bottom slds-m-bottom--xx-small slds-list--horizontal slds-grid_align-spread">
+                        <span class="slds-truncate">VIN:</span>
+                        <span class="slds-float--right slds-truncate">
+                                {!v.dealDetails.vehicleDetails.vin}
+                        </span>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="12" class="slds-form-element slds-has-divider--bottom slds-m-bottom--xx-small slds-list--horizontal slds-grid_align-spread">
+                        <span class="slds-truncate">Transmission Type:</span>
+                        <span class="slds-float--right slds-truncate">
+                                {!v.dealDetails.vehicleDetails.transmission}
+                        </span>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="12" class="slds-form-element slds-has-divider--bottom slds-m-bottom--xx-small slds-list--horizontal slds-grid_align-spread">
+                        <span class="slds-truncate">Stock #:</span>
+                        <span class="slds-float--right slds-truncate">
+                                {!v.dealDetails.vehicleDetails.stockNo}
+                        </span>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="12" class="slds-form-element slds-has-divider--bottom slds-m-bottom--xx-small slds-list--horizontal slds-grid_align-spread">
+                        <span class="slds-truncate">Mileage:</span>
+                        <span class="slds-float--right slds-truncate">
+                                {!v.dealDetails.vehicleDetails.mileage}
+                        </span>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="12" class="slds-form-element slds-has-divider--bottom slds-m-bottom--xx-small slds-list--horizontal slds-grid_align-spread">
+                        <span class="slds-truncate">Price:</span>
+                        <span class="slds-float--right slds-truncate">
+                                ${!v.dealDetails.vehicleDetails.sellingPrice}
+                        </span>
+                    </lightning:layoutItem>
+
+                    <aura:if isTrue="{!v.isManager}">
+                        <lightning:layoutItem size="12" class="slds-form-element slds-has-divider--bottom slds-m-bottom--xx-small slds-list--horizontal slds-grid_align-spread">
+                            <span class="slds-truncate">Down:</span>
+                            <span class="slds-float--right slds-truncate">
+                                ${!v.dealDetails.vehicleDetails.downPayment}
+                            </span>
+                        </lightning:layoutItem>
+                    </aura:if>
+
+                    <lightning:layoutItem size="12" class="slds-form-element slds-has-divider--bottom slds-m-bottom--xx-small slds-list--horizontal slds-grid_align-spread">
+                        <span class="slds-truncate">Picks:</span>
+                        <span class="slds-float--right slds-truncate">
+                                ${!v.dealDetails.vehicleDetails.pickPayment}
+                        </span>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="12" class="slds-form-element slds-has-divider--bottom slds-m-bottom--xx-small slds-list--horizontal slds-grid_align-spread">
+                        <span class="slds-truncate">Int. Rate:</span>
+                        <span class="slds-float--right slds-truncate">
+                                 <lightning:formattedNumber value="{!v.dealDetails.vehicleDetails.interestRate}" style="percent" minimumFractionDigits="0" maximumFractionDigits="4" />
+                        </span>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="12" class="slds-form-element slds-has-divider--bottom slds-m-bottom--xx-small slds-list--horizontal slds-grid_align-spread">
+                        <span class="slds-truncate">Payment ({!if(v.employment.Salary_Type__c == 'Weekly', 'Bi-Weekly', v.employment.Salary_Type__c)}):</span>
+                        <span class="slds-float--right slds-truncate">
+                                 ${!v.dealDetails.vehicleDetails.payment}
+                        </span>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="12" class="slds-form-element slds-has-divider--bottom slds-m-bottom--xx-small slds-list--horizontal slds-grid_align-spread">
+                        <span class="slds-truncate">Term:</span>
+                        <span class="slds-float--right slds-truncate">
+                                {!v.dealDetails.vehicleDetails.maxTerm}
+                        </span>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="12" class="slds-form-element slds-has-divider--bottom slds-m-bottom--xx-small slds-list--horizontal slds-grid_align-spread">
+                        <span class="slds-truncate">VSC:</span>
+                        <span class="slds-float--right slds-truncate">
+                            ${!v.dealDetails.vehicleDetails.warrantyPrice}
+                        </span>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="12" class="slds-form-element slds-has-divider--bottom slds-m-bottom--xx-small slds-list--horizontal slds-grid_align-spread">
+                        <span class="slds-truncate">Trade In ACV:</span>
+                        <span class="slds-float--right slds-truncate">
+                              ${!v.dealDetails.vehicleDetails.tradeACV}
+                        </span>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="12" class="slds-form-element slds-has-divider--bottom slds-m-bottom--xx-small slds-list--horizontal slds-grid_align-spread">
+                        <span class="slds-truncate">Payoff:</span>
+                        <span class="slds-float--right slds-truncate">
+                               ${!v.dealDetails.vehicleDetails.tradePayoff}
+                        </span>
+                    </lightning:layoutItem>
+
+                    <lightning:layoutItem size="12" class="slds-form-element slds-has-divider--bottom slds-m-bottom--small slds-list--horizontal slds-grid_align-spread">
+                        <span class="slds-truncate">Net trade:</span>
+                        <span class="slds-float--right slds-truncate">
+                               ${!v.dealDetails.vehicleDetails.tradeACV - v.dealDetails.vehicleDetails.tradePayoff}
+                        </span>
+                    </lightning:layoutItem>
+                </lightning:layout>
+
+                <div class="slds-list--horizontal slds-grid_align-center">
+                    <lightning:button class="slds-button--brand" label="Submit" onclick="{!c.sendDealForFinalApproval}" disabled="{!or(not(v.isManager), not(v.areActionsAllowed))}" />
+                    <lightning:button class="slds-button--destructive" label="Remove Vehicle" onclick="{!c.removeVehicleFromDeal}" disabled="{!not(v.areActionsAllowed)}" />
+                </div>
+            </lightning:tab>
+
+            <aura:if isTrue="{!and(v.isManager, v.areActionsAllowed)}">
+                <lightning:tab label="Adjustments">
+                    <lightning:layout horizontalAlign="center" verticalAlign="center" multipleRows="true">
+                        <lightning:layoutItem size="12" class="slds-form-element slds-m-bottom--x-small">
+                            <lightning:select label="Payment:" value="{!v.dealDetails.vehicleDetails.warrantyID}" onchange="{!c.changePayment}" disabled="{!v.creditApp.Store_Location__r.State__c == 'FL'}">
+                                <aura:iteration items="{!v.dealDetails.vehicleDetails.vscItems}" var="vscItem" end="3">
+                                    <option value="{!vscItem.id}" text="{!'$' + vscItem.payment + ' ' + vscItem.name}"></option>
+                                </aura:iteration>
+                            </lightning:select>
+                        </lightning:layoutItem>
+
+                        <lightning:layoutItem size="12" class="slds-form-element slds-m-bottom--x-small">
+                            <lightning:input type="number" formatter="currency" label="Trade In ACV:" name="tradeACV" value="{!v.dealDetails.vehicleDetails.tradeACV}" onblur="{!c.validateNumberInput}" />
+                        </lightning:layoutItem>
+
+                        <lightning:layoutItem size="12" class="slds-form-element slds-m-bottom--x-small">
+                            <lightning:input type="number" formatter="currency" label="Payoff:" name="tradePayoff" value="{!v.dealDetails.vehicleDetails.tradePayoff}" onblur="{!c.validateNumberInput}" />
+                        </lightning:layoutItem>
+
+                        <lightning:layoutItem size="12" class="slds-form-element">
+                            <div class="slds-form-element slds-hint-parent">
+                                <span class="slds-form-element__label">Net Trade</span>
+                                <div class="slds-form-element__control">
+                                    <span class="slds-form-element__static">{!'$' + (v.dealDetails.vehicleDetails.tradeACV - v.dealDetails.vehicleDetails.tradePayoff)}</span>
+                                </div>
+                            </div>
+                        </lightning:layoutItem>
+                    </lightning:layout>
+                </lightning:tab>
+            </aura:if>
+        </lightning:tabset>
+    </lightning:layout>
+
+    <footer class="slds-card__footer">
+        <lightning:layout verticalAlign="center" multipleRows="true" class="slds-grid">
+            <lightning:layoutItem size="6" mediumDeviceSize="6" smallDeviceSize="12" class="slds-grid--vertical-align-start">
+                <lightning:layout class="slds-button-group">
+                    <lightning:buttonIcon title="Refresh data" variant="border" iconName="utility:refresh" alternativeText="Refresh data" onclick="{!c.reloadBox}"/>
+                </lightning:layout>
+            </lightning:layoutItem>
+            <lightning:layoutItem size="6" mediumDeviceSize="6" smallDeviceSize="12">
+                <lightning:layout horizontalAlign="end">
+                    <aura:if isTrue="{!v.creditApp.Is_Flipped__c}">
+                        <c:popover iconName="utility:rotate" popoverClass="slds-popover slds-nubbin_bottom-right bottom-popover-position slds-text-align_left">
+                            <aura:set attribute="popoverContent">
+                                <div class="slds-popover__body">
+                                    <span>
+                                        This credit application was flipped.
+                                        <br/>
+                                        <b>Reason</b> : {!v.creditApp.Flip_Reason__c}.
+                                    </span>
+                                </div>
+                            </aura:set>
+                        </c:popover>
+                    </aura:if>
+
+                    <aura:if isTrue="{!v.creditApp.Is_Linked__c}">
+                        <c:popover iconName="utility:link" popoverClass="slds-popover slds-nubbin_bottom-right bottom-popover-position slds-text-align_left">
+                            <aura:set attribute="popoverContent">
+                                <div class="slds-popover__body">
+                                    <span>
+                                        {!v.creditApp.Link_Details__c}
+                                    </span>
+                                </div>
+                            </aura:set>
+                        </c:popover>
+                    </aura:if>
+
+                    <c:popover iconName="utility:help" popoverClass="slds-nubbin_right bottom-help-popover-position slds-text-align_left">
+                        <aura:set attribute="popoverContent">
+                            <header class="slds-popover__header">
+                                <h2 class="slds-text-heading_small">
+                                    <b>Help: </b> {!v.creditApp.Credit_Application_Status__c} Status
+                                </h2>
+                            </header>
+                            <div class="slds-popover__body">
+                                <aura:if isTrue="{!v.creditApp.Credit_Application_Status__c == 'Vehicle Selected'}">
+                                    <p>
+                                        This deal is awaiting management approval.
+                                        <br/>
+                                        You may not update it at this time.
+                                    </p>
+                                </aura:if>
+
+                                <aura:if isTrue="{!v.creditApp.Credit_Application_Status__c == 'Pending Final Approval'}">
+                                    <p>
+                                        This deal is awaiting final underwriting approval.
+                                        <br/>
+                                        You may not update it at this time.
+                                    </p>
+                                </aura:if>
+
+                                <aura:if isTrue="{!v.creditApp.Credit_Application_Status__c == 'Denied'}">
+                                    <p>
+                                        This deal is awaiting management approval.
+                                        <br/>
+                                        You may not update it at this time.
+                                    </p>
+                                </aura:if>
+
+                                <aura:if isTrue="{!v.creditApp.Credit_Application_Status__c == 'Approved'}">
+                                    <p>
+                                        This deal was approved.
+                                        <br/>
+                                        You don't need to update it.
+                                    </p>
+                                </aura:if>
+                            </div>
+                            <footer class="slds-popover__footer">
+                                <lightning:layout multipleRows="true">
+                                    <lightning:layoutItem size="12" class="slds-m-bottom--xxx-small">
+                                        <lightning:buttonIcon iconName="utility:refresh" alternativeText="Refresh data" variant="border" size="large" />
+                                        - refresh data
+                                    </lightning:layoutItem>
+
+                                    <aura:if isTrue="{!v.creditApp.Is_Flipped__c}">
+                                        <lightning:layoutItem size="12" class="slds-m-bottom--xxx-small">
+                                            <lightning:buttonIcon iconName="utility:rotate" alternativeText="Flip" variant="container" />
+                                            - toggle flip reason
+                                        </lightning:layoutItem>
+                                    </aura:if>
+
+                                    <aura:if isTrue="{!v.creditApp.Is_Linked__c}">
+                                        <lightning:layoutItem size="12" class="slds-m-bottom--xxx-small">
+                                            <lightning:buttonIcon iconName="utility:link" alternativeText="Flip" variant="container" />
+                                            - application is linked
+                                        </lightning:layoutItem>
+                                    </aura:if>
+
+                                    <lightning:layoutItem size="12">
+                                        <lightning:buttonIcon iconName="utility:help" alternativeText="Help" variant="container" />
+                                        - toggle help
+                                    </lightning:layoutItem>
+                                </lightning:layout>
+                            </footer>
+                        </aura:set>
+                    </c:popover>
+                </lightning:layout>
+            </lightning:layoutItem>
+        </lightning:layout>
+    </footer>
+</aura:component>

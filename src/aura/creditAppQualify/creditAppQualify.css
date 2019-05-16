@@ -1,0 +1,20 @@
+.THIS .success-icon svg {
+    fill: rgb(94, 180, 255);
+}
+
+.THIS .final-success-icon svg {
+    fill: rgb(2, 128, 72);
+}
+
+.THIS .warning-icon svg {
+    fill: rgb(194, 57, 52);
+}
+
+.THIS .slds-progress-bar {
+    height: initial;
+}
+
+.THIS .slds-progress-bar__value {
+    height: 0.125rem;
+    transition: width 0.4s;
+}

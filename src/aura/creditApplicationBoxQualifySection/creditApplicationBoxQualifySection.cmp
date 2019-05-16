@@ -1,0 +1,124 @@
+<aura:component controller="CreditAppQualifyComponentController">
+	<aura:attribute name="buyerSocialSecurityNumber" type="String" />
+	<aura:attribute name="coBuyerSocialSecurityNumber" type="String" />
+
+	<aura:attribute name="stepNumber" type="Integer" default="0" />
+
+	<aura:attribute name="salesPortalAccessToken" type="String" />
+	<aura:attribute name="salesUpId" type="String" />
+	<aura:attribute name="searchResult" type="Object" />
+
+	<aura:attribute name="errorMessage" type="String" />
+
+	<aura:registerEvent name="showInnerErrorMessageEvent" type="c:showInnerErrorMessage" />
+
+	<div>
+		<div class="slds-progress">
+			<!--<ol class="slds-progress__list">
+				<li class="{!if(v.stepNumber == 0, 'slds-is-active', if(v.stepNumber > 0, 'slds-is-completed', '')) + ' slds-progress__item'}" title="Social security number input">
+					<button class="{!if(v.stepNumber > 0, 'slds-button&#45;&#45;icon slds-progress__marker&#45;&#45;icon', '') + ' slds-button slds-progress__marker'}">
+						<lightning:icon iconName="utility:success" alternativeText="Step 1 - Completed" size="xx-small" class="{!if(v.stepNumber > 0, 'success-icon', 'slds-hide')}" />
+					</button>
+				</li>
+				<li class="{!if(v.stepNumber == 1, if(not(empty(v.errorMessage)), 'slds-has-error', 'slds-is-active'), if(v.stepNumber > 1, 'slds-is-completed', '')) + ' slds-progress__item'}" title="Search in system...">
+					<button class="{!if((v.stepNumber > 1) || not(empty(v.errorMessage)), 'slds-button&#45;&#45;icon slds-progress__marker&#45;&#45;icon', '') + ' slds-button slds-progress__marker'}">
+						<lightning:icon iconName="utility:success" alternativeText="Step 2 - Completed" size="xx-small" class="{!if(v.stepNumber > 1, 'success-icon', 'slds-hide')}" />
+						<lightning:icon iconName="utility:warning" alternativeText="Step 2 - Completed" size="xx-small" class="{!if(not(empty(v.errorMessage)), 'warning-icon', 'slds-hide')}" />
+					</button>
+				</li>
+				<li class="{!if(v.stepNumber == 2, if(v.searchResult.areActiveApplicationsFound, 'slds-has-error', 'slds-is-completed'), '') + ' slds-progress__item'}" title="Search result">
+					<button class="{!if(v.stepNumber == 2, 'slds-button&#45;&#45;icon slds-progress__marker&#45;&#45;icon', '') + ' slds-button slds-progress__marker'}">
+						<lightning:icon iconName="utility:success" alternativeText="Step 2 - Completed" size="xx-small" class="{!if((v.stepNumber == 2) &amp;&amp; (not(v.searchResult.areActiveApplicationsFound)), 'final-success-icon', 'slds-hide')}" />
+						<lightning:icon iconName="utility:warning" alternativeText="Step 2 - Completed" size="xx-small" class="{!if((v.stepNumber == 2) &amp;&amp; (v.searchResult.areActiveApplicationsFound), 'warning-icon', 'slds-hide')}" />
+					</button>
+				</li>
+			</ol>-->
+			<lightning:icon iconName="standard:first_non_empty" variant="error" size="large" alternativeText="No Credit Application"/>
+			<div class="slds-progress-bar">
+				<span class="slds-progress-bar__value" style="{!'width:' + (v.stepNumber * 50) + '%;'}">
+					<span class="slds-assistive-text"></span>
+				</span>
+			</div>
+		</div>
+
+		<div class="{!if(v.stepNumber == 0, 'slds-visible', 'slds-hide')}">
+			<legend class="slds-form-element__label slds-m-top--medium">
+				To write up a customer, search for an active application first.
+				Enter the customer’s and cobuyer’s (not required), social security number below, and press Search.
+			</legend>
+
+			<!--<div class="slds-form-element slds-m-top&#45;&#45;medium">
+				<lightning:input aura:id="social-security-number" required="true" value="{!v.buyerSocialSecurityNumber}" onblur="{!c.validateSocialSecurityNumber}"
+								 label="Buyer Social Security Number" messageWhenValueMissing="Customer social security number is required"
+								 pattern="^[0-9]{9}$|^[0-9]{3}-[0-9]{2}-[0-9]{4}$" messageWhenPatternMismatch="Correct formats for social security number are '123456789' or '123-45-6789'"
+				/>
+				<lightning:input aura:id="social-security-number" label="Co-Buyer Social Security Number" value="{!v.coBuyerSocialSecurityNumber}" onblur="{!c.validateSocialSecurityNumber}"
+								 pattern="^[0-9]{9}$|^[0-9]{3}-[0-9]{2}-[0-9]{4}$" messageWhenPatternMismatch="Correct formats for social security number are '123456789' or '123-45-6789'"
+				/>
+
+				<div class="slds-grid slds-grid&#45;&#45;align-center slds-m-top&#45;&#45;x-small">
+					<lightning:button aura:id="search-button" variant="brand" label="Search" disabled="true" onclick="{!c.searchActiveApplicationsInSystem}"/>
+				</div>
+			</div>-->
+		</div>
+
+		<!--<div class="{!if(v.stepNumber == 1, 'slds-visible slds-grid slds-grid&#45;&#45;align-center', 'slds-hide')}">
+			<span class="{!if(empty(v.errorMessage), 'slds-form-element__label slds-m-top&#45;&#45;medium', 'slds-hide')}">
+				Searching for credit application in system...
+			</span>
+			<span class="{!if(empty(v.errorMessage), 'slds-hide', 'slds-form-element__label slds-m-top&#45;&#45;medium')}">
+				We have encountered an issue during search. Please see exception message at the top.
+			</span>
+		</div>-->
+
+		<!--<div class="{!if((v.stepNumber == 2) &amp;&amp; not(v.searchResult.areActiveApplicationsFound), 'slds-show', 'slds-hide')}">
+			<div class="slds-grid slds-grid&#45;&#45;align-center">
+				<span class="slds-form-element__label slds-m-top&#45;&#45;medium">
+					No duplicates were found, you can qualify a sales up.
+				</span>
+			</div>
+
+			<div class="slds-grid slds-grid&#45;&#45;align-center slds-m-top&#45;&#45;x-small">
+				<lightning:button variant="neutral" label="Qualify" onclick="{!c.qualifyCreditApplication}"/>
+			</div>
+		</div>
+
+		<div class="{!if((v.stepNumber == 2) &amp;&amp; (v.searchResult.areActiveApplicationsFound), 'slds-show', 'slds-hide')}">
+			<div class="{!if(empty(v.searchResult.activeBuyerApplication), 'slds-hide', 'slds-grid slds-grid&#45;&#45;align-center')}">
+				<span class="{!if(empty(v.searchResult.activeBuyerApplication.activeApplicationId), 'slds-form-element__label slds-m-top&#45;&#45;medium slds-p-around&#45;&#45;medium', 'slds-hide')}">
+					There is already an active credit application with <b>{!v.searchResult.activeBuyerApplication.activeApplicationSalesPortalId}</b> deal ID for buyer with <b>{!v.searchResult.activeBuyerApplication.socialSecurityNumber}</b> social security number.
+					Unfortunately there is no credit application in Salesforce which refers to it. Contact no your manager to resolve this issue.
+				</span>
+				<span class="{!if(not(empty(v.searchResult.activeBuyerApplication.activeApplicationId)) &amp;&amp; empty(v.searchResult.activeBuyerApplication.activeApplicationSalesUpId), 'slds-form-element__label slds-m-top&#45;&#45;medium slds-p-around&#45;&#45;medium', 'slds-hide')}">
+					There is already an active credit application with <b>{!v.searchResult.activeBuyerApplication.activeApplicationSalesPortalId}</b> deal ID for buyer with <b>{!v.searchResult.activeBuyerApplication.socialSecurityNumber}</b> social security number.
+					Unfortunately there is no Sales Up that it is related to it. Ask your manager to assign credit application with <b>{!v.searchResult.activeBuyerApplication.activeApplicationSalesPortalId}</b> deal ID to this Sales Up.
+				</span>
+				<span class="{!if(not(empty(v.searchResult.activeBuyerApplication.activeApplicationId)) &amp;&amp; not(empty(v.searchResult.activeBuyerApplication.activeApplicationSalesUpId)), 'slds-form-element__label slds-m-top&#45;&#45;medium slds-p-around&#45;&#45;medium', 'slds-hide')}">
+					There is already an active credit application with <b>{!v.searchResult.activeBuyerApplication.activeApplicationSalesPortalId}</b> deal ID for buyer with <b>{!v.searchResult.activeBuyerApplication.socialSecurityNumber}</b> social security number.
+					<a href="{!'/one/one.app?#/sObject/'+v.searchResult.activeBuyerApplication.activeApplicationSalesUpId + '/view'}">Click here</a> to be taken to the proper Sales Up.
+				</span>
+				<span class="{!if(v.searchResult.activeBuyerApplication.isBuyer, 'slds-hide', 'slds-form-element__label slds-m-top&#45;&#45;medium slds-box')}" style="color: rgb(194, 57, 52);">
+					Primary Buyer already has an active credit application. No customer can have two active credit applications at the same time.
+					You must choose credit application to move forward with. If you want to qualify this customer as a Primary Buyer you must remove this customer as a co-buyer from the other Sales Up.
+				</span>
+			</div>
+			<div class="{!if(not(empty(v.searchResult.activeBuyerApplication)) || empty(v.searchResult.activeCoBuyerApplication), 'slds-hide', 'slds-grid slds-grid&#45;&#45;align-center')}">
+				<span class="{!if(empty(v.searchResult.activeCoBuyerApplication.activeApplicationId), 'slds-form-element__label slds-m-top&#45;&#45;medium slds-p-around&#45;&#45;medium', 'slds-hide')}">
+					There is already an active credit application with <b>{!v.searchResult.activeCoBuyerApplication.activeApplicationSalesPortalId}</b> deal ID for co-buyer with {!v.searchResult.activeCoBuyerApplication.socialSecurityNumber} social security number.
+					Unfortunately there is no credit application in Salesforce which refers to it. Please contact your manager to resolve this issue.
+				</span>
+				<span class="{!if(not(empty(v.searchResult.activeCoBuyerApplication.activeApplicationId)) &amp;&amp; empty(v.searchResult.activeCoBuyerApplication.activeApplicationSalesUpId), 'slds-form-element__label slds-m-top&#45;&#45;medium slds-p-around&#45;&#45;medium', 'slds-hide')}">
+					There is already an active credit application with <b>{!v.searchResult.activeCoBuyerApplication.activeApplicationSalesPortalId}</b> deal ID for co-buyer with {!v.searchResult.activeCoBuyerApplication.socialSecurityNumber} social security number.
+					Unfortunately there is no Sales Up that it is related to it. Ask you manager to assign credit application with <b>{!v.searchResult.activeCoBuyerApplication.activeApplicationSalesPortalId}</b> Deal Id to this Sales Up.
+				</span>
+				<span class="{!if(not(empty(v.searchResult.activeCoBuyerApplication.activeApplicationId)) &amp;&amp; not(empty(v.searchResult.activeCoBuyerApplication.activeApplicationSalesUpId)), 'slds-form-element__label slds-m-top&#45;&#45;medium slds-p-around&#45;&#45;medium', 'slds-hide')}">
+					There is already an active credit application with <b>{!v.searchResult.activeCoBuyerApplication.activeApplicationSalesPortalId}</b> deal ID for co-buyer with {!v.searchResult.activeCoBuyerApplication.socialSecurityNumber} social security number.
+				</span>
+				<span class="{!if(not(v.searchResult.activeCoBuyerApplication.isBuyer), 'slds-hide', 'slds-form-element__label slds-m-top&#45;&#45;medium slds-box')}" style="color: rgb(194, 57, 52);">
+					The co-buyer already has an active credit application. No customer can have two active credit applications at the same time.
+					Remove the co-buyer from Sales Up. If you want to qualify the Primary Buyer alone then perform the SSN check again with only Primary Buyer.
+				</span>
+			</div>
+		</div>-->
+	</div>
+</aura:component>

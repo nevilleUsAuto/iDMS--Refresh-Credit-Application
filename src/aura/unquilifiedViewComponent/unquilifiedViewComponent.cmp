@@ -1,0 +1,228 @@
+<aura:component controller="UnqualifiedViewComponentController" implements="flexipage:availableForAllPageTypes">
+    <aura:attribute name="unqualifiedRecords" type="UnqualifiedViewComponentController.UnqualifiedRecordWrapper[]" access="public"/>
+    <aura:attribute name="startLineNumber" type="Integer" default="0"/>
+    <aura:attribute name="endLineNumber" type="Integer" default="20"/>
+    <aura:attribute name="quantityOnPage" type="Integer" default="20"/>
+    <aura:attribute name="currentLimit" type="Integer" default="100"/>
+    <aura:attribute name="lastDays" type="String" default="5" />
+    <aura:attribute name="totalDatabaseRecordCount" type="Integer"/>
+
+    <aura:attribute name="showSpinner" type="Boolean" default="true" /> <!-- NB: 2019-05-16 modified the spinner process -->
+
+    <ltng:require scripts="{!$Resource.commonHelper}" afterScriptsLoaded="{!c.init}"/>
+
+    <div class=" slds-grid slds-grow" id="modal-content-id-1">
+        <div class="slds-grid slds-grid_vertical">
+            <div class="slds-p-vertical_x-small slds-p-horizontal_large slds-shrink-none slds-theme_shade">
+                <div class="slds-form-element">
+                    <label class="slds-form-element__label slds-assistive-text" for="combobox-unique-id-2">Search</label>
+                    <div class="slds-form-element__control">
+                        <div class="slds-combobox_container">
+                            <div class="slds-combobox slds-dropdown-trigger slds-dropdown-trigger_click"
+                                 aria-expanded="false" aria-haspopup="listbox" role="combobox">
+                                <div class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right"
+                                     role="none">
+                                    <lightning:layout multipleRows="true">
+                                        <lightning:layoutItem size="3">
+                                            <lightning:select name="forDays" label="For days?" value="{!v.lastDays}" onchange="{!c.updateForm}">
+                                                <option value="1">1</option>
+                                                <option value="5" selected="true">5</option>
+                                                <option value="10">10</option>
+                                                <option value="15">15</option>
+                                                <option value="20">20</option>
+                                                <option value="25">25</option>
+                                                <option value="30">30</option>
+                                                <option value="40">40</option>
+                                                <option value="120">120</option>
+                                            </lightning:select>
+                                        </lightning:layoutItem>
+
+                                        <lightning:layoutItem size="3" class="slds-p-left--x-small">
+                                            <lightning:select name="onPage" label="Quantity on page" value="{!v.quantityOnPage}" onchange="{!c.quantityChange}">
+                                                <option value="10">10</option>
+                                                <option value="20">20</option>
+                                                <option value="40">40</option>
+                                                <option value="100">100</option>
+                                            </lightning:select>
+                                        </lightning:layoutItem>
+
+                                        <lightning:layoutItem size="3" class="slds-grid slds-grid--align-end">
+                                            <lightning:layout multipleRows="false">
+                                                <lightning:layoutItem size="12">
+                                                    <lightning:icon iconName="standard:opportunity" size="medium"/> - Opportunity
+                                                </lightning:layoutItem>
+                                                <lightning:layoutItem size="12">
+                                                    <lightning:icon iconName="standard:lead" size="medium"/> - Lead
+                                                </lightning:layoutItem>
+                                            </lightning:layout>
+                                        </lightning:layoutItem>
+                                    </lightning:layout>
+                                </div>
+                                <div id="listbox-unique-id" role="listbox">
+                                    <ul class="slds-listbox slds-listbox_vertical slds-dropdown slds-dropdown_fluid"
+                                        role="presentation">
+                                        <li role="presentation" class="slds-listbox__item">
+                                            <div id="listbox-option-unique-id-01"
+                                                 class="slds-media slds-listbox__option slds-listbox__option_entity slds-listbox__option_has-meta"
+                                                 role="option">
+
+                                                <span class="slds-media__body">
+                                                <span class="slds-listbox__option-text slds-listbox__option-text_entity">Acme</span>
+                                                <span class="slds-listbox__option-meta slds-listbox__option-meta_entity">Account • San Francisco</span>
+                                                </span>
+                                            </div>
+                                        </li>
+                                        <li role="presentation" class="slds-listbox__item">
+                                            <div id="listbox-option-unique-id-02"
+                                                 class="slds-media slds-listbox__option slds-listbox__option_entity slds-listbox__option_has-meta"
+                                                 role="option">
+                                                    <span class="slds-media__figure">
+                                                        <span class="slds-icon_container slds-icon-standard-account">
+
+                                                        </span>
+                                                    </span>
+                                                <span class="slds-media__body">
+                                                    <span class="slds-listbox__option-text slds-listbox__option-text_entity">Salesforce.com, Inc.</span>
+                                                    <span class="slds-listbox__option-meta slds-listbox__option-meta_entity">Account • San Francisco</span>
+                                                    </span>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="slds-scrollable slds-grow">
+                <div class="slds-scrollable_none">
+                    <table aria-multiselectable="true"
+                           class="slds-table slds-no-row-hover slds-table_bordered slds-table_fixed-layout slds-table_resizable-cols"
+                           role="grid">
+                        <thead>
+                        <tr class="slds-line-height_reset">
+                            <th class="slds-text-title_caps" scope="col" style="width: 3.75rem;"></th>
+                            <th aria-label="Name" aria-sort="none"
+                                class="slds-text-title_caps slds-is-resizable slds-is-sortable" scope="col">
+                                <a class="slds-th__action slds-text-link_reset" href="javascript:void(0);"
+                                   role="button" tabindex="-1">
+                                    <span class="slds-assistive-text">Sort by: </span>
+                                    <div class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                        <span class="slds-truncate" title="Name">Name</span>
+                                        <span class="slds-icon_container slds-icon-utility-arrowdown">
+
+                                        </span>
+                                    </div>
+                                </a>
+                                <div class="slds-resizable">
+                                    <input aria-label="Name column width"
+                                           class="slds-resizable__input slds-assistive-text"
+                                           id="cell-resize-handle-5" max="1000" min="20" tabindex="-1"
+                                           type="range"/>
+                                    <span class="slds-resizable__handle">
+                                        <span class="slds-resizable__divider"></span>
+                                        </span>
+                                </div>
+                            </th>
+                            <th aria-label="Channel" aria-sort="none"
+                                class="slds-text-title_caps slds-is-resizable slds-is-sortable" scope="col">
+                                <a class="slds-th__action slds-text-link_reset" href="javascript:void(0);"
+                                   role="button" tabindex="-1">
+                                    <span class="slds-assistive-text">Sort by: </span>
+                                    <div class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                        <span class="slds-truncate" title="List Price">Email</span>
+                                    </div>
+                                </a>
+                                <div class="slds-resizable">
+                                    <input aria-label="List Price column width"
+                                           class="slds-resizable__input slds-assistive-text"
+                                           id="cell-resize-handle-7" max="1000" min="20" tabindex="-1"
+                                           type="range"/>
+                                    <span class="slds-resizable__handle">
+                                        <span class="slds-resizable__divider"></span>
+                                        </span>
+                                </div>
+                            </th>
+                            <th aria-label="Source" aria-sort="none"
+                                class="slds-text-title_caps slds-is-resizable slds-is-sortable" scope="col">
+                                <a class="slds-th__action slds-text-link_reset" href="javascript:void(0);"
+                                   role="button" tabindex="-1">
+                                    <span class="slds-assistive-text">Sort by: </span>
+                                    <div class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                        <span class="slds-truncate" title="Product Family">Source</span>
+
+
+                                    </div>
+                                </a>
+                                <div class="slds-resizable">
+                                    <input aria-label="Product Family column width"
+                                           class="slds-resizable__input slds-assistive-text"
+                                           id="cell-resize-handle-8" max="1000" min="20" tabindex="-1"
+                                           type="range"/>
+                                    <span class="slds-resizable__handle">
+                                        <span class="slds-resizable__divider"></span>
+                                        </span>
+                                </div>
+                            </th>
+                            <th aria-label="Source" aria-sort="none"
+                                class="slds-text-title_caps slds-is-resizable slds-is-sortable" scope="col">
+                                <a class="slds-th__action slds-text-link_reset" href="javascript:void(0);"
+                                   role="button" tabindex="-1">
+                                    <span class="slds-assistive-text">Sort by: </span>
+                                    <div class="slds-grid slds-grid_vertical-align-center slds-has-flexi-truncate">
+                                        <span class="slds-truncate" title="Product Family">Created Date</span>
+
+
+                                    </div>
+                                </a>
+                                <div class="slds-resizable">
+                                    <input aria-label="Product Family column width"
+                                           class="slds-resizable__input slds-assistive-text"
+                                           id="cell-resize-handle-8" max="1000" min="20" tabindex="-1"
+                                           type="range"/>
+                                    <span class="slds-resizable__handle">
+                                        <span class="slds-resizable__divider"></span>
+                                        </span>
+                                </div>
+                            </th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <aura:iteration var="unqualifiedRecord" items="{!v.unqualifiedRecords}" start="{!v.startLineNumber}" end="{!v.endLineNumber}">
+                            <tr aria-selected="false" class="slds-hint-parent">
+                                <td class="slds-text-align_right" role="gridcell" tabindex="0">
+                                    <div class="slds-checkbox_add-button">
+                                        <lightning:icon iconName="{!if(unqualifiedRecord.type == 'Lead', 'standard:lead', 'standard:opportunity')}"/>
+                                    </div>
+                                </td>
+                                <th scope="row">
+                                    <a class="slds-truncate" href="{!'/one/one.app?#/sObject/' + unqualifiedRecord.id  + '/view'}">{!unqualifiedRecord.name}</a>
+                                </th>
+                                <td role="gridcell">
+                                    <div class="slds-truncate" title="5000.00">{!unqualifiedRecord.email}</div>
+                                </td>
+                                <td role="gridcell">
+                                    <div class="slds-truncate" title="Analytics Product">{!unqualifiedRecord.source}</div>
+                                </td>
+                                <td role="gridcell">
+                                    <div class="slds-truncate" title="Analytics Product">{!unqualifiedRecord.createdDateFormated}</div>
+                                </td>
+                            </tr>
+                        </aura:iteration>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <aura:if aura:id="component-action-spinner" isTrue="{!v.showSpinner}">
+            <lightning:spinner variant="brand" size="large"/>
+        </aura:if>
+    </div>
+    <footer class="slds-modal__footer">
+        <aura:if isTrue="{!greaterthan(v.totalDatabaseRecordCount, v.quantityOnPage)}">
+            <span class="slds-p-right--x-small">Records {!v.startLineNumber+1} - {!v.endLineNumber}</span>
+            <lightning:button aura:id="previous-button" name="previous" label="Previous" disabled="true" onclick="{!c.previousList}"/>
+            <lightning:button aura:id="next-button" name="next" label="Next" disabled="false" onclick="{!c.nextList}"/>
+        </aura:if>
+    </footer>
+</aura:component>

@@ -1,0 +1,7 @@
+<!--
+ - Created by admin on 4/27/18.
+ -->
+
+<design:component >
+    <!--<design:attribute name="caId" label="Credit Application ID" description="The CA ID" /> -->
+</design:component>

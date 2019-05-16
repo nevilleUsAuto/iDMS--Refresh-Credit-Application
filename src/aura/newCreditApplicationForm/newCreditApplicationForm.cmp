@@ -1,0 +1,654 @@
+<aura:component implements="force:appHostable,flexipage:availableForAllPageTypes,force:hasRecordId,lightning:actionOverride">
+
+	<aura:attribute name="recordId" type="String"/>
+	<aura:attribute name="opportunity" type="Opportunity"/>
+	<aura:attribute name="creditApplication" type="Credit_Application__c"/>
+	<aura:attribute name="employment" type="Employment__c"/>
+	<aura:attribute name="coAppEmployment" type="Employment__c"/>
+	<aura:attribute name="residence" type="Residence__c"/>
+	<aura:attribute name="coAppResidence" type="Residence__c"/>
+	<aura:attribute name="tabShown" type="String" default="personal-information"/>
+
+	<aura:attribute name="errorMessage" type="String"/>
+
+	<lightning:card title="Credit Appplication">
+		<lightning:layout multipleRows="true">
+			<lightning:layoutItem size="2">
+				<div class="slds-path">
+					<div class="slds-grid slds-path__track">
+						<div class="slds-grid slds-path__scroller-container">
+							<div class="slds-path__scroller" role="application">
+								<div class="slds-path__scroller_inner">
+									<ul class="slds-path__nav" role="listbox" aria-orientation="horizontal">
+										<li class="slds-path__item slds-is-current slds-is-active" role="presentation">
+											<a href="javascript:void(0);" id="personal-information" aria-selected="true"
+											   class="slds-path__link" onclick="{!c.navigateToComponentSection}">
+											  <span class="slds-path__stage">
+												<lightning:icon iconName="utility:check" variant="bare"/>
+												<span class="slds-assistive-text">Current Stage:</span>
+											  </span>
+												<span class="slds-path__title">Personal Information</span>
+											</a>
+										</li>
+										<li class="slds-path__item slds-is-incomplete" role="presentation">
+											<a href="javascript:void(0);" id="current-housing-information" aria-selected="false"
+											   class="slds-path__link" onclick="{!c.navigateToComponentSection}">
+                         						<span class="slds-path__stage">
+													<lightning:icon iconName="utility:check" variant="bare"/>
+											 	</span>
+												<span class="slds-path__title">Current Housing Information</span>
+											</a>
+										</li>
+										<li class="slds-path__item slds-is-incomplete" role="presentation">
+											<a href="javascript:void(0);" id="previous-housing-information" aria-selected="false"
+											   class="slds-path__link" onclick="{!c.navigateToComponentSection}">
+											  <span class="slds-path__stage">
+												  <lightning:icon iconName="utility:check" variant="bare"/>
+											  </span>
+												<span class="slds-path__title">Previous Housing Information</span>
+											</a>
+										</li>
+										<li class="slds-path__item slds-is-incomplete" role="presentation">
+											<a aria-selected="false" class="slds-path__link" href="javascript:void(0);"
+											   id="employment-information" onclick="{!c.navigateToComponentSection}"
+											   role="option" tabindex="-1">
+											  <span class="slds-path__stage">
+												  <lightning:icon iconName="utility:check" variant="bare"/>
+											  </span>
+												<span class="slds-path__title">Employment Information</span>
+											</a>
+										</li>
+										<li class="slds-path__item slds-is-incomplete" role="presentation">
+											<a aria-selected="false" class="slds-path__link" href="javascript:void(0);" id="credit-history"
+											   onclick="{!c.navigateToComponentSection}"
+											   role="option" tabindex="-1">
+											  <span class="slds-path__stage">
+												  <lightning:icon iconName="utility:check" variant="bare"/>
+											  </span>
+												<span class="slds-path__title">Credit History</span>
+											</a>
+										</li>
+										<li class="slds-path__item slds-is-incomplete" role="presentation">
+											<a aria-selected="false" class="slds-path__link" href="javascript:void(0);" id="repeat-customer"
+											   onclick="{!c.navigateToComponentSection}"
+											   role="option" tabindex="-1">
+											  <span class="slds-path__stage">
+												  <lightning:icon iconName="utility:check" variant="bare"/>
+											  </span>
+												<span class="slds-path__title">Repeat Customer</span>
+											</a>
+										</li>
+										<li class="slds-path__item slds-is-incomplete" role="presentation">
+											<a aria-selected="false" class="slds-path__link" href="javascript:void(0);"
+											   id="optional-message" onclick="{!c.navigateToComponentSection}"
+											   role="option" tabindex="-1">
+											  <span class="slds-path__stage">
+												  <lightning:icon iconName="utility:check" variant="bare"/>
+											  </span>
+												<span class="slds-path__title">Message to Underwriting</span>
+											</a>
+										</li>
+									</ul>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</lightning:layoutItem>
+
+			<aura:if isTrue="{!v.tabShown == 'personal-information'}">
+
+				<lightning:layoutItem size="10" class="slds-border--left">
+					<div aura:id="personal-information" class="slds-page-header">
+						<div class="slds-media slds-media--center">
+							<div class="slds-media__figure">
+								<lightning:icon iconName="standard:contact" class="slds-icon slds-icon-standard-contact"/>
+							</div>
+							<div class="slds-media__body">
+								<p class="slds-page-header__title slds-truncate">Personal Information</p>
+							</div>
+						</div>
+					</div>
+
+					<lightning:layout horizontalAlign="center" multipleRows="true">
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--large">
+							<lightning:input label="First Name" name="firstName" value="{!v.creditApplication.Buyer__r.FirstName}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--large">
+							<lightning:input label="Co-buyer First Name" name="coBuyerFirstName"
+							                 value="{!v.creditApplication.Co_Buyer__r.LastName}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Last Name" name="lastName" value="{!v.creditApplication.Buyer__r.LastName}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Last Name" name="coBuyerLastName"
+							                 value="{!v.creditApplication.Co_Buyer__r.LastName}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Home Phone" name="homePhone" value="{!v.creditApplication.Buyer__r.Phone}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Home Phone" name="coBuyerHomePhone"
+							                 value="{!v.creditApplication.Co_Buyer__r.Phone}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Mobile Phone" name="mobilePhone" value="{!v.creditApplication.Buyer__r.MobilePhone}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Mobile Phone" name="coBuyerMobilePhone"
+							                 value="{!v.creditApplication.Co_Buyer__r.MobilePhone}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Email Address" name="emailAddress" value="{!v.creditApplication.Buyer__r.Email}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Email Address" name="coBuyerEmailAddress"
+							                 value="{!v.creditApplication.Co_Buyer__r.Email}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Social Security Number" name="socialSecurityNumber"
+							                 value="{!v.creditApplication.Buyer__r.Social_Security_Number__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Social Security Number" name="coBuyerSocialSecurityNumber"
+							                 value="{!v.creditApplication.Co_Buyer__r.Social_Security_Number__c}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Date of Birth" name="dateOfBirth" value="{!v.creditApplication.Buyer__r.Birthdate}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Date of Birth" name="coBuyerDateOfBirth"
+							                 value="{!v.creditApplication.Co_Buyer__r.Birthdate}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Driver Licence Number" name="driverLicenceNumber"
+							                 value="{!v.creditApplication.Buyer__r.Driver_License_Number__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Driver Licence Number" name="coBuyerDriverLicenceNumber"
+							                 value="{!v.creditApplication.Co_Buyer__r.Driver_License_Number__c}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Driver Licence State" name="driverLicenceState"
+							                 value="{!v.creditApplication.Buyer__r.Driver_License_State__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Social Security Number" name="coBuyerDriverLicenceState"
+							                 value="{!v.creditApplication.Co_Buyer__r.Driver_License_State__c}"/>
+						</lightning:layoutItem>
+					</lightning:layout>
+				</lightning:layoutItem>
+
+			</aura:if>
+
+			<aura:if isTrue="{!v.tabShown == 'current-housing-information'}">
+
+				<div aura:id="current-housing-information" class="slds-page-header slds-m-top--large">
+					<div class="slds-media slds-media--center">
+						<div class="slds-media__figure">
+							<lightning:icon iconName="standard:household" class="slds-icon slds-icon-custom-custom79"/>
+						</div>
+						<div class="slds-media__body">
+							<p class="slds-page-header__title slds-truncate">Current Housing Information</p>
+						</div>
+					</div>
+				</div>
+
+				<lightning:layout horizontalAlign="center" multipleRows="true">
+					<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--large">
+						<lightning:input label="Housing Type" name="housingType" value="{!v.residence.Housing_Type__c}"/>
+					</lightning:layoutItem>
+					<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--large">
+						<lightning:input label="Co-buyer First Housing Type" name="coBuyerHousingType"
+						                 value="{!v.coAppResidence.Housing_Type__c}"/>
+					</lightning:layoutItem>
+
+					<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+						<lightning:input label="Current House Number" name="currentHouseNumber" value="{!v.residence.House_Number__c}"/>
+					</lightning:layoutItem>
+					<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+						<lightning:input label="Co-buyer Current House Number" name="coBuyerCurrentHouseNumber"
+						                 value="{!v.coAppResidence.House_Number__c}"/>
+					</lightning:layoutItem>
+
+					<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+						<lightning:input label="Current Street" name="currentStreet" value="{!v.residence.Street__c}"/>
+					</lightning:layoutItem>
+					<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+						<lightning:input label="Co-buyer Current Street" name="coBuyerCurrentStreet" value="{!v.coAppResidence.Street__c}"/>
+					</lightning:layoutItem>
+
+					<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+						<lightning:input label="Current Street Type" name="currentStreetType" value="{!v.residence.Street_Type__c}"/>
+					</lightning:layoutItem>
+					<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+						<lightning:input label="Co-buyer Current Street Type" name="coBuyerCurrentStreetType"
+						                 value="{!v.coAppResidence.Street_Type__c}"/>
+					</lightning:layoutItem>
+
+					<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+						<lightning:input label="Current Address City" name="currentAddressCity" value="{!v.residence.Address_City__c}"/>
+					</lightning:layoutItem>
+					<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+						<lightning:input label="Co-buyer Current Address City" name="coBuyerCurrentAddressCity"
+						                 value="{!v.coAppResidence.Address_City__c}"/>
+					</lightning:layoutItem>
+
+					<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+						<lightning:input label="Current Address State" name="currentAddressState" value="{!v.residence.Address_State__c}"/>
+					</lightning:layoutItem>
+					<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+						<lightning:input label="Co-buyer Current Address State" name="coBuyerCurrentAddressState"
+						                 value="{!v.coAppResidence.Address_State__c}"/>
+					</lightning:layoutItem>
+
+					<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+						<lightning:input label="Current Address Zip" name="currentAddressZip" value="{!v.residence.Address_Zip__c}"/>
+					</lightning:layoutItem>
+					<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+						<lightning:input label="Co-buyer Current Address Zip" name="coBuyerCurrentAddressZip"
+						                 value="{!v.coAppResidence.Address_Zip__c}"/>
+					</lightning:layoutItem>
+
+					<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+						<lightning:input label="Current Address Duration (Years)" name="currentAddressDurationYears"
+						                 value="{!v.residence.Address_Duration_Years__c}"/>
+					</lightning:layoutItem>
+					<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+						<lightning:input label="Co-buyer Current Address Duration (Years)" name="coBuyerCurrentAddressDurationYears"
+						                 value="{!v.coAppResidence.Address_Duration_Years__c}"/>
+					</lightning:layoutItem>
+
+					<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+						<lightning:input label="Current Address Duration (Months)" name="currentAddressDurationMonths"
+						                 value="{!v.residence.Address_Duration_Months__c}"/>
+					</lightning:layoutItem>
+					<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+						<lightning:input label="Co-buyer Current Address Duration (Months)" name="coBuyerCurrentAddressDurationMonths"
+						                 value="{!v.coAppResidence.Address_Duration_Months__c}"/>
+					</lightning:layoutItem>
+
+					<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+						<lightning:input label="Home Payment" name="homePayment" value="{!v.residence.Home_Payment__c}"/>
+					</lightning:layoutItem>
+					<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+						<lightning:input label="Co-buyer Home Payment" name="coBuyerHomePayment"
+						                 value="{!v.coAppResidence.House_Payment__c}"/>
+					</lightning:layoutItem>
+				</lightning:layout>
+
+			</aura:if>
+
+			<aura:if isTrue="{!v.tabShown == 'previous-housing-information'}">
+
+				<lightning:layoutItem size="10" class="slds-border--left">
+					<div aura:id="previous-housing-information" class="slds-page-header slds-m-top--large">
+						<div class="slds-media slds-media--center">
+							<div class="slds-media__figure">
+								<lightning:icon iconName="custom:custom85" class="slds-icon"/>
+							</div>
+							<div class="slds-media__body">
+								<p class="slds-page-header__title slds-truncate">Previous Housing Information</p>
+							</div>
+						</div>
+					</div>
+
+					<lightning:layout horizontalAlign="center" multipleRows="true">
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--large">
+							<lightning:input label="Previous Address Street" name="previousAddressStreet"
+							                 value="{!v.creditApplication.dealer__Previous_Address_1_Street__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--large">
+							<lightning:input label="Co-buyer Previous Address Street" name="coBuyerPreviousAddressStreet"
+							                 value="{!v.creditApplication.dealer__Co_App_Previous_Address_1_Street__c}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Previous Address 2" name="previousAddress2"
+							                 value="{!v.creditApplication.Previous_Address_2__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Previous Address 2" name="coBuyerPreviousAddress2"
+							                 value="{!v.creditApplication.Co_App_Previous_Address_2__c}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Previous Address City" name="previousAddressCity"
+							                 value="{!v.creditApplication.dealer__Previous_Address_1_City__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Previous Address City" name="coBuyerPreviousAddressCity"
+							                 value="{!v.creditApplication.dealer__Co_App_Previous_Address_1_City__c}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Previous Address State" name="previousAddressState"
+							                 value="{!v.creditApplication.Previous_Address_1_State__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Previous Address State" name="coBuyerPreviousAddressState"
+							                 value="{!v.creditApplication.Co_App_Prev_Address_1_State__c}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Previous Address Zip" name="previousAddressZip"
+							                 value="{!v.creditApplication.dealer__Previous_Address_1_Zip__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Previous Address Zip" name="coBuyerPreviousAddressZip"
+							                 value="{!v.creditApplication.dealer__Co_App_Prev_Address_1_Zip__c}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Previous Address Duration (Years)" name="previousAddressDurationYears"
+							                 value="{!v.creditApplication.Previous_Address_Duration_Years__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Previous Address Duration (Years)" name="coBuyerPreviousAddressDurationYears"
+							                 value="{!v.creditApplication.Co_App_Prev_Address_Duration_Years__c}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Previous Address Duration (Months)" name="previousAddressDurationMonths"
+							                 value="{!v.creditApplication.Previous_Address_Duration_Months__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Previous Address Duration (Months)" name="coBuyerPreviousAddressDurationMonths"
+							                 value="{!v.creditApplication.Previous_Address_Duration_Months__c}"/>
+						</lightning:layoutItem>
+					</lightning:layout>
+				</lightning:layoutItem>
+
+			</aura:if>
+
+			<aura:if isTrue="{!v.tabShown == 'employment-information'}">
+
+				<lightning:layoutItem size="10" class="slds-border--left">
+					<div aura:id="employment-information" class="slds-page-header slds-m-top--large">
+						<div class="slds-media slds-media--center">
+							<div class="slds-media__figure">
+								<lightning:icon iconName="custom:custom84" class="slds-icon"/>
+							</div>
+							<div class="slds-media__body">
+								<p class="slds-page-header__title slds-truncate">Employment Information</p>
+							</div>
+						</div>
+					</div>
+
+					<lightning:layout horizontalAlign="center" multipleRows="true">
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--large">
+							<lightning:input label="Present Employer" name="presentEmployer"
+							                 value="{!v.creditApplication.dealer__Present_Employer__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--large">
+							<lightning:input label="Co-buyer Present Employer" name="coBuyerPresentEmployer"
+							                 value="{!v.creditApplication.dealer__Co_App_Present_Employer__c}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Present Employer Address" name="presentEmployerAddress"
+							                 value="{!v.creditApplication.dealer__Present_Employer_Street__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Present Employer Address" name="coBuyerPresentEmployerAddress"
+							                 value="{!v.creditApplication.dealer__Co_App_Present_Employer_Street__c}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Present Employer City" name="presentEmployerCity"
+							                 value="{!v.creditApplication.dealer__Present_Employer_City__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Present Employer City" name="coBuyerPresentEmployerCity"
+							                 value="{!v.creditApplication.dealer__Co_App_Present_Employer_City__c}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Present Employer State" name="presentEmployerState"
+							                 value="{!v.creditApplication.Present_Employer_State__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Present Employer State" name="coBuyerPresentEmployerState"
+							                 value="{!v.creditApplication.Co_App_Present_Employer_State__c}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Present Employer Zip" name="presentEmployerZip"
+							                 value="{!v.creditApplication.dealer__Present_Employer_Zip__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Present Employer Zip" name="coBuyerPresentEmployerZip"
+							                 value="{!v.creditApplication.dealer__Co_App_Present_Employer_Zip__c}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Occupation Or Rank" name="occupationOrRank"
+							                 value="{!v.creditApplication.dealer__Occupation_Or_Rank__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Occupation Or Rank" name="coBuyerOccupationOrRank"
+							                 value="{!v.creditApplication.dealer__Co_App_Occupation_Or_Rank__c}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Present Employer Phone" name="presentEmployerPhone"
+							                 value="{!v.creditApplication.dealer__Present_Employer_Phone__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Present Employer Phone" name="coBuyerPresentEmployerPhone"
+							                 value="{!v.creditApplication.dealer__Co_App_Present_Employer_Phone__c}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Present Employer Duration (Years)" name="presentEmployerDurationYears"
+							                 value="{!v.creditApplication.Present_Employer_Duration_Years__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Present Employer Duration (Years)" name="coBuyerPresentEmployerDurationYears"
+							                 value="{!v.creditApplication.Co_App_Present_Employer_Duration_Years__c}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Present Employer Duration (Months)" name="presentEmployerDurationMonths"
+							                 value="{!v.creditApplication.Present_Employer_Duration_Months__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Present Employer Duration (Months)" name="coBuyerPresentEmployerDurationMonths"
+							                 value="{!v.creditApplication.Co_App_Present_Employer_Duration_Month__c}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Applicant's Net Period Paycheck" name="netPeriodPaycheck"
+							                 value="{!v.creditApplication.Net_Period_Paycheck__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Applicant's Net Period Paycheck" name="coBuyerNetPeriodPaycheck"
+							                 value="{!v.creditApplication.Co_App_Net_Period_Paycheck__c}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Salary Type" name="salaryType" value="{!v.creditApplication.Salary_Type__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Salary Type" name="coBuyerSalaryType"
+							                 value="{!v.creditApplication.Co_App_Salary_Type__c}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Other Income" name="otherIncome" value="{!v.creditApplication.Other_Income__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Other Income" name="coBuyerOtherIncome"
+							                 value="{!v.creditApplication.Co_App_Other_Income__c}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Previous Employer" name="previousEmployer"
+							                 value="{!v.creditApplication.dealer__Previous_Employer_1__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Previous Employer" name="coBuyerPreviousEmployer"
+							                 value="{!v.creditApplication.dealer__Co_App_Previous_Employer_1__c}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Previous Employer Duration (Years)" name="previousEmployerDurationYears"
+							                 value="{!v.creditApplication.Previous_Employer_1_Duration_Years__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Previous Employer Duration (Years)" name="coBuyerPreviousEmployerDurationYears"
+							                 value="{!v.creditApplication.Co_App_Previous_Employer_1_Duration_Y__c}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Previous Employer Duration (Months)" name="previousEmployerDurationMonths"
+							                 value="{!v.creditApplication.Previous_Employer_1_Duration_Months__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Previous Employer Duration (Months)"
+							                 name="coBuyerPreviousEmployerDurationMonths"
+							                 value="{!v.creditApplication.Co_App_Previous_Employer_1_Duration_M__c}"/>
+						</lightning:layoutItem>
+					</lightning:layout>
+				</lightning:layoutItem>
+
+			</aura:if>
+
+			<aura:if isTrue="{!v.tabShown == 'credit-history'}">
+				<lightning:layoutItem size="10" class="slds-border--left">
+					<div aura:id="credit-history" class="slds-page-header slds-m-top--large">
+						<div class="slds-media slds-media--center">
+							<div class="slds-media__figure">
+								<lightning:icon iconName="standard:client" class="slds-icon"/>
+							</div>
+							<div class="slds-media__body">
+								<p class="slds-page-header__title slds-truncate">Credit History</p>
+							</div>
+						</div>
+					</div>
+
+					<lightning:layout horizontalAlign="center" multipleRows="true">
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--large">
+							<lightning:input label="Available Down Payment" name="downPayment"
+							                 value="{!v.creditApplication.Available_Down_Payment__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--large">
+							<lightning:input label="Co-buyer Available Down Payment" name="coBuyerDownPayment"
+							                 value="{!v.creditApplication.Co_App_Available_Down_Payment__c}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Car Repossessed" name="carRepossessed" type="checkbox"
+							                 value="{!v.creditApplication.Car_Repossessed__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Car Repossessed" name="coBuyerCarRepossessed" type="checkbox"
+							                 value="{!v.creditApplication.Co_App_Car_Repossessed__c}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Currently in Bankruptcy?" name="currentlyInBancruptcy" type="checkbox"
+							                 value="{!v.creditApplication.Currently_In_Bankruptcy__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Currently in Bankruptcy?" name="cobuyerCurrentlyInBancruptcy" type="checkbox"
+							                 value="{!v.creditApplication.Co_App_Currently_In_Bankruptcy__c}"/>
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Ever Filed Bankruptcy or Chapter 13?" name="everFiledBancruptcy" type="checkbox"
+							                 value="{!v.creditApplication.Ever_Filed_Bankruptcy_or_Chapter_13__c}"/>
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Ever Filed Bankruptcy or Chapter 13?" name="coBuyerEverFiledBancruptcy"
+							                 type="checkbox" value="{!v.creditApplication.Co_App_gone_through_bankruptcy__c}"/>
+						</lightning:layoutItem>
+					</lightning:layout>
+				</lightning:layoutItem>
+
+			</aura:if>
+
+			<aura:if isTrue="{!v.tabShown == 'repeat-customer'}">
+
+				<lightning:layoutItem size="10" class="slds-border--left">
+					<div aura:id="repeat-customer" class="slds-page-header slds-m-top--large">
+						<div class="slds-media slds-media--center">
+							<div class="slds-media__figure">
+								<lightning:icon iconName="custom:custom14" class="slds-icon"/>
+							</div>
+							<div class="slds-media__body">
+								<p class="slds-page-header__title slds-truncate">Repeat Customer?</p>
+							</div>
+						</div>
+					</div>
+
+					<lightning:layout horizontalAlign="center" multipleRows="true">
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--large">
+							<lightning:input label="Repeat Customer?" name="repeatCustomer" value="{!v.creditApplication.Repeat_Customer__c}" />
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--large">
+							<lightning:input label="Co-buyer Repeat Customer?" name="coBuyerRepeatCustomer" value="{!v.creditApplication.Co_App_Repeat_Customer__c}" />
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Repeat Reason" name="repeatReason" value="{!v.creditApplication.Repeat_Reason__c}" />
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Repeat Reason" name="coBuyerRepeatReason" value="{!v.creditApplication.Co_App_Repeat_Reason__c}" />
+						</lightning:layoutItem>
+
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Previous Account Number" name="previousAccountNumber" value="{!v.creditApplication.Previous_Account_Number__c}" />
+						</lightning:layoutItem>
+						<lightning:layoutItem size="6" padding="horizontal-large" class="slds-m-top--small">
+							<lightning:input label="Co-buyer Previous Account Number" name="coBuyerPreviousAccountNumber" value="{!v.creditApplication.Co_App_Previous_Account_Number__c}" />
+						</lightning:layoutItem>
+					</lightning:layout>
+				</lightning:layoutItem>
+
+			</aura:if>
+
+			<aura:if isTrue="{!v.tabShown == 'optional-message'}">
+
+				<lightning:layoutItem size="10" class="slds-border--left">
+					<div aura:id="optional-message" class="slds-page-header slds-m-top--large">
+						<div class="slds-media slds-media--center">
+							<div class="slds-media__figure">
+								<lightning:icon iconName="standard:post" class="slds-icon"/>
+							</div>
+							<div class="slds-media__body">
+								<p class="slds-page-header__title slds-truncate">Optional Message to Underwriting</p>
+							</div>
+						</div>
+					</div>
+
+					<lightning:layout horizontalAlign="center" multipleRows="true" class="slds-m-bottom--xx-large">
+						<lightning:layoutItem size="12" padding="horizontal-large" class="slds-m-top--large slds-m-bottom--medium">
+							<lightning:textarea label="Message" name="message" value="{!v.creditApplication.Credit_Application_Comment__c}" />
+						</lightning:layoutItem>
+					</lightning:layout>
+				</lightning:layoutItem>
+
+			</aura:if>
+
+
+			<lightning:layoutItem>
+				<div class="slds-docked-form-footer slds-size--10-of-12" style="left: initial;">
+					<lightning:layout class="slds-size--1-of-1" horizontalAlign="center">
+						<lightning:button variant="neutral" label="Back to Sales Up" iconName="utility:back"/>
+						<lightning:button variant="brand"  label="Save" iconName="utility:check"/>
+					</lightning:layout>
+				</div>
+			</lightning:layoutItem>
+		</lightning:layout>
+	</lightning:card>
+</aura:component>
