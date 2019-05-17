@@ -1,6 +1,6 @@
 ({
 	init : function (component, event, helper) {
-		helper.showSpinner(component,  event);
+		component.set('v.showSpinner', true);
 		console.log('init');
 		component.set('v.isInitComplete', false);
 		var getPicklistsAction = component.get("c.getAllPicklistsByName");
@@ -115,12 +115,13 @@
 				component.set('v.isInitComplete', true);  // NB:2019-04-25
 
 				$A.get('e.force:refreshView').fire();
-				helper.hideSpinner(component,  event);
+				component.set('v.showSpinner', false);
 			})
 		).catch(
 			$A.getCallback(function(errorMessage) {
 				commonHelper.showToast(errorMessage, "sticky", "error");
 				component.set("v.isInit", false);
+				component.set('v.showSpinner', false);
 			})
 		);
 	},
@@ -597,8 +598,8 @@
 	},
 
     tryToSaveCreditApplication1 : function (component, event, helper) {
-	    debugger;
-        commonHelper.showSpinner(component, "component-action-spinner");
+
+		component.set('v.showSpinner', true);
         helper.handleReferencesChange(component, event);
 
 		var validateWrapperAction = component.get("c.validateData");
@@ -778,7 +779,7 @@
                 component.set("v.finishEditModal", true);
                 component.set("v.saveButtonClickedMode", true);
                 component.set("v.creditApplication", creditApp);
-                commonHelper.hideSpinner(component, "component-action-spinner");
+				component.set('v.showSpinner', false);
 				console.log(invalidFields);
 			})
 		).catch(
@@ -789,7 +790,7 @@
 	},
 
 	tryToSaveCreditApplication : function (component, event, helper) {
-		commonHelper.showSpinner(component, "component-action-spinner");
+		component.set('v.showSpinner', true);
 		helper.handleReferencesChange(component, event);
 
 		var readyToSubmitSections = component.get("v.readyToSubmitSections");
@@ -821,11 +822,11 @@
 		component.set("v.saveButtonClickedMode", true);
 		component.set("v.creditApplication", creditApp);
 		component.set("v.messageWhenNotReadyToSubmit", messageWhenInvalid);
-		commonHelper.hideSpinner(component, "component-action-spinner");
+		component.set('v.showSpinner', false);
 	},
 
 	finishSaveCreditApplication : function (component, event, helper) {
-		commonHelper.showSpinner(component, "component-action-spinner");
+		component.set('v.showSpinner', true);
 
 		var references = component.get("v.referencesList");
 		for (var i = 0; i < references.length; i++) {
@@ -905,7 +906,7 @@
 		).catch(
 			$A.getCallback(function(errorMessage) {
 				commonHelper.showToast(errorMessage, "sticky", "error");
-				commonHelper.hideSpinner(component, "component-action-spinner");
+				component.set('v.showSpinner', false);
 			})
 		);
 	},

@@ -228,22 +228,6 @@
 		}
 		validationMap.references = isValid;
 		component.set("v.readyToSubmitSections", validationMap);
-	},
-
-	showSpinner : function(component, event) {
-		var popovers = component.find("box-container").find({instancesOf : "c:popover"});
-
-		for (var i = 0; i < popovers.length; i++) {
-			popovers[i].set("v.isVisible", false);
-		}
-
-		var actionSpinner = component.find("action-spinner");
-		//actionSpinner.set("v.isTrue", true);
-	},
-
-	hideSpinner : function(component, event) {
-		var actionSpinner = component.find("action-spinner");
-		actionSpinner.set("v.isTrue", false);
 	}
 
 });

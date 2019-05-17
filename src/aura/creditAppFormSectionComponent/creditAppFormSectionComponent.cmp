@@ -1,6 +1,7 @@
 <aura:component controller="CreditAppEditComponentController"
                 implements="flexipage:availableForRecordHome,flexipage:availableForAllPageTypes,force:hasRecordId">
     <aura:attribute name="isInitComplete" type="Boolean" default="false" />
+    <aura:attribute name="showSpinner" type="Boolean" default="false" />
 
 	<aura:attribute name="currentSectionName" type="String" default="personal"/>
 	<aura:attribute name="isCoBuyerExist" type="Boolean" default="false"/>
@@ -1810,13 +1811,8 @@
 		</div>
 	</aura:if>
 
-
-    <lightning:layout horizontalAlign="center" verticalAlign="center" multipleRows="true" class="slds-is-relative slds-card component-box">
-        <lightning:layoutItem aura:id="box-container" size="12" class="slds-p-around_medium slds-box">
-            <aura:if aura:id="action-spinner" isTrue="false">
-                <lightning:spinner variant="brand" size="large" alternativeText="Loading" />
-            </aura:if>
-        </lightning:layoutItem>
-    </lightning:layout>
+    <aura:if aura:id="action-spinner" isTrue="{!v.showSpinner}">
+        <lightning:spinner variant="brand" size="large" alternativeText="Loading" />
+    </aura:if>
 
 </aura:component>
